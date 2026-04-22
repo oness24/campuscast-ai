@@ -57,7 +57,22 @@ def probe_weather() -> ProbeResult:
 
 
 def probe_ollama() -> ProbeResult:
-    return ProbeResult("ollama", False, "not implemented yet (Task 4)")
+    body = {
+        "model": "llama3.1:8b",
+        "prompt": "Responda em uma frase curta: qual é a capital do Brasil?",
+        "stream": False,
+    }
+    try:
+        r = requests.post(OLLAMA_URL, json=body, timeout=60)
+        r.raise_for_status()
+        data = r.json()
+        response = data.get("response", "")
+        if not isinstance(response, str) or not response.strip():
+            return ProbeResult("ollama", False, f"empty/invalid response: {response!r}")
+        preview = response.strip().replace("\n", " ")[:120]
+        return ProbeResult("ollama", True, f"{len(response)} chars — {preview!r}")
+    except Exception as e:
+        return ProbeResult("ollama", False, f"{type(e).__name__}: {e}")
 
 
 def probe_kokoro() -> ProbeResult:
