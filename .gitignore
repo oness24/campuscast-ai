@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+
+# Generated audio (keep folders via .gitkeep; ignore all WAV/MP3 anywhere)
+*.wav
+*.mp3
+
+# n8n local state
+.n8n/
+
+# Editor
+.vscode/
+.idea/
+
+# Secrets
+.env
+*.env.local
+credentials/*.json
+!credentials/.gitkeep
+
+# The huge cloned n8n source tree (safety net in case it isn't removed yet)
+n8n/
