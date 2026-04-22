@@ -1,0 +1,76 @@
+{
+  "name": "CampusCast AI MVP",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "c3ebdf60-8b4f-4f3e-bb3a-0e1b1a8b0001",
+      "name": "When clicking 'Execute workflow'",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://api.open-meteo.com/v1/forecast",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "latitude", "value": "-25.4284" },
+            { "name": "longitude", "value": "-49.2733" },
+            { "name": "current", "value": "temperature_2m,relative_humidity_2m,precipitation,rain,weather_code,wind_speed_10m" },
+            { "name": "timezone", "value": "America/Sao_Paulo" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "c3ebdf60-8b4f-4f3e-bb3a-0e1b1a8b0002",
+      "name": "Weather",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [480, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const weather = $input.first().json.current;\n\nconst WMO = {\n  0: 'céu limpo',\n  1: 'parcialmente nublado', 2: 'parcialmente nublado',\n  3: 'céu encoberto',\n  45: 'neblina', 48: 'neblina',\n  51: 'garoa', 53: 'garoa', 55: 'garoa',\n  61: 'chuva fraca', 63: 'chuva moderada', 65: 'chuva forte',\n  66: 'chuva congelante', 67: 'chuva congelante',\n  71: 'neve', 73: 'neve', 75: 'neve',\n  80: 'pancadas de chuva', 81: 'pancadas de chuva', 82: 'pancadas de chuva',\n  95: 'trovoada', 96: 'trovoada', 99: 'trovoada'\n};\nconst weather_phrase = WMO[weather.weather_code] || 'condição indefinida';\n\nconst payload = {\n  city: 'Curitiba',\n  weather_time: weather.time,\n  temperature: weather.temperature_2m,\n  humidity: weather.relative_humidity_2m,\n  rain: weather.rain,\n  precipitation: weather.precipitation,\n  wind_speed: weather.wind_speed_10m,\n  weather_phrase,\n  events_list: 'Nenhum evento registrado hoje.'\n};\n\nconst prompt = `Você é o CampusCast AI, um assistente que cria boletins curtos diários para estudantes.\n\nDados do clima:\n- Cidade: ${payload.city}\n- Condição atual: ${payload.weather_phrase} (código ${weather.weather_code})\n- Temperatura: ${payload.temperature} °C\n- Umidade: ${payload.humidity}%\n- Chuva: ${payload.rain} mm\n- Precipitação: ${payload.precipitation} mm\n- Vento: ${payload.wind_speed} km/h\n- Horário: ${payload.weather_time}\n\nEventos do campus hoje:\n${payload.events_list}\n\nCrie um boletim com:\n1. Uma saudação curta.\n2. Um resumo do clima em uma ou duas frases.\n3. Conselhos práticos para estudantes que vão ao campus.\n4. Um alerta de risco apenas se necessário.\n\nRegras:\n- Máximo de 120 palavras.\n- Use português claro e natural do Brasil.\n- Não invente eventos.\n- Deixe o texto adequado para leitura em áudio (sem listas, sem emojis).`;\n\nreturn [{ json: { payload, prompt } }];"
+      },
+      "id": "c3ebdf60-8b4f-4f3e-bb3a-0e1b1a8b0003",
+      "name": "Build Prompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [720, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:11434/api/generate",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"llama3.1:8b\",\n  \"prompt\": {{ JSON.stringify($json.prompt) }},\n  \"stream\": false\n}",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "id": "c3ebdf60-8b4f-4f3e-bb3a-0e1b1a8b0004",
+      "name": "Ollama Generate",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [960, 300]
+    }
+  ],
+  "connections": {
+    "When clicking 'Execute workflow'": {
+      "main": [[{ "node": "Weather", "type": "main", "index": 0 }]]
+    },
+    "Weather": {
+      "main": [[{ "node": "Build Prompt", "type": "main", "index": 0 }]]
+    },
+    "Build Prompt": {
+      "main": [[{ "node": "Ollama Generate", "type": "main", "index": 0 }]]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
