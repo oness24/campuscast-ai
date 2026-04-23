@@ -42,7 +42,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "http://localhost:11434/api/generate",
+        "url": "http://127.0.0.1:11434/api/generate",
         "sendBody": true,
         "contentType": "json",
         "specifyBody": "json",
@@ -60,7 +60,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "http://localhost:8800/tts",
+        "url": "http://127.0.0.1:8800/tts",
         "sendBody": true,
         "contentType": "json",
         "specifyBody": "json",
