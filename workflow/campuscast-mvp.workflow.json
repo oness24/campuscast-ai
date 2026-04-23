@@ -56,6 +56,24 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [960, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:8800/tts",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"text\": {{ JSON.stringify($json.response) }}\n}",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "id": "c3ebdf60-8b4f-4f3e-bb3a-0e1b1a8b0005",
+      "name": "Kokoro TTS",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [1200, 300]
     }
   ],
   "connections": {
@@ -67,6 +85,9 @@
     },
     "Build Prompt": {
       "main": [[{ "node": "Ollama Generate", "type": "main", "index": 0 }]]
+    },
+    "Ollama Generate": {
+      "main": [[{ "node": "Kokoro TTS", "type": "main", "index": 0 }]]
     }
   },
   "pinData": {},
