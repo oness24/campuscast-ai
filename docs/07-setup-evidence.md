@@ -131,6 +131,28 @@ All 8 nodes in the workflow went green in a single execution.
 
 ---
 
+## 6b. Prompt hardening (post-Etapa-1 iteration)
+
+After an initial run produced a minor hallucination (mentioning a guarda-chuva even though `rain=0` and weather was `céu encoberto`), the `Build Prompt` Code node and the `Ollama Generate` HTTP body were tightened:
+
+- The Code node now derives explicit booleans (`is_raining`, `is_hot`, `is_cold`, `is_windy`, `is_stormy`) from the weather payload and injects conditional content rules into the prompt (e.g. *"NÃO há chuva. NÃO mencione guarda-chuva, chuva ou proteção contra chuva."*).
+- The Ollama request body was updated with `"options": {"temperature": 0.3, "top_p": 0.9, "num_predict": 220}` to reduce creative divergence.
+- Explicit "fonte única da verdade" and anti-invention rules were added to the prompt.
+
+Execution 122001 (ran 2026-04-22T22:18:15-03:00) produced a 72-word bulletin that correctly says "sem chuva", "temperatura amena", and does not invent protective gear. See the `results` tab of the spreadsheet for the row; `llm_response` is the post-hardening output.
+
+## 6c. Failure-path evidence (intentional failure run)
+
+To demonstrate robustness, Kokoro was stopped and the workflow executed. Execution **122003** finished with `status=error` and the logged failure was:
+
+```text
+connect ECONNREFUSED 127.0.0.1:8800
+```
+
+— exactly the expected condition when the Kokoro server is offline. The failure was captured in n8n's execution history (`GET /rest/executions/122003`).
+
+**Note on storage during failure:** the current MVP workflow does not have an error-branch wired to Sheets, so a failed run does not produce a `status=error` row in the spreadsheet. The spec's full design calls for such a branch (see `docs/superpowers/specs/2026-04-22-campuscast-ai-etapa1-design.md` §7); that is a planned enhancement.
+
 ## 7. Git History (as of this evidence)
 
 ```text
