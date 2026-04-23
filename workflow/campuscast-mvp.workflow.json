@@ -27,17 +27,46 @@
       "name": "Weather",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
-      "position": [480, 300]
+      "position": [460, 300]
     },
     {
       "parameters": {
-        "jsCode": "const weather = $input.first().json.current;\n\nconst WMO = {\n  0: 'céu limpo',\n  1: 'parcialmente nublado', 2: 'parcialmente nublado',\n  3: 'céu encoberto',\n  45: 'neblina', 48: 'neblina',\n  51: 'garoa', 53: 'garoa', 55: 'garoa',\n  61: 'chuva fraca', 63: 'chuva moderada', 65: 'chuva forte',\n  66: 'chuva congelante', 67: 'chuva congelante',\n  71: 'neve', 73: 'neve', 75: 'neve',\n  80: 'pancadas de chuva', 81: 'pancadas de chuva', 82: 'pancadas de chuva',\n  95: 'trovoada', 96: 'trovoada', 99: 'trovoada'\n};\nconst weather_phrase = WMO[weather.weather_code] || 'condição indefinida';\n\nconst payload = {\n  city: 'Curitiba',\n  weather_time: weather.time,\n  temperature: weather.temperature_2m,\n  humidity: weather.relative_humidity_2m,\n  rain: weather.rain,\n  precipitation: weather.precipitation,\n  wind_speed: weather.wind_speed_10m,\n  weather_phrase,\n  events_list: 'Nenhum evento registrado hoje.'\n};\n\nconst prompt = `Você é o CampusCast AI, um assistente que cria boletins curtos diários para estudantes.\n\nDados do clima:\n- Cidade: ${payload.city}\n- Condição atual: ${payload.weather_phrase} (código ${weather.weather_code})\n- Temperatura: ${payload.temperature} °C\n- Umidade: ${payload.humidity}%\n- Chuva: ${payload.rain} mm\n- Precipitação: ${payload.precipitation} mm\n- Vento: ${payload.wind_speed} km/h\n- Horário: ${payload.weather_time}\n\nEventos do campus hoje:\n${payload.events_list}\n\nCrie um boletim com:\n1. Uma saudação curta.\n2. Um resumo do clima em uma ou duas frases.\n3. Conselhos práticos para estudantes que vão ao campus.\n4. Um alerta de risco apenas se necessário.\n\nRegras:\n- Máximo de 120 palavras.\n- Use português claro e natural do Brasil.\n- Não invente eventos.\n- Deixe o texto adequado para leitura em áudio (sem listas, sem emojis).`;\n\nreturn [{ json: { payload, prompt } }];"
+        "authentication": "serviceAccount",
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1DQ1hYUafUCFAGBlfEjy0cBKKGTKhOdTDVlqXzBbHqKk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "events"
+        },
+        "options": {}
+      },
+      "id": "c3ebdf60-8b4f-4f3e-bb3a-0e1b1a8b0006",
+      "name": "Events Read",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [680, 300],
+      "credentials": {
+        "googleApi": {
+          "id": "xsjRaVzdAvkp6C3F",
+          "name": "Google Sheets — CampusCast"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const weather = $('Weather').first().json.current;\n\nconst WMO = {\n  0: 'céu limpo',\n  1: 'parcialmente nublado', 2: 'parcialmente nublado',\n  3: 'céu encoberto',\n  45: 'neblina', 48: 'neblina',\n  51: 'garoa', 53: 'garoa', 55: 'garoa',\n  61: 'chuva fraca', 63: 'chuva moderada', 65: 'chuva forte',\n  66: 'chuva congelante', 67: 'chuva congelante',\n  71: 'neve', 73: 'neve', 75: 'neve',\n  80: 'pancadas de chuva', 81: 'pancadas de chuva', 82: 'pancadas de chuva',\n  95: 'trovoada', 96: 'trovoada', 99: 'trovoada'\n};\nconst weather_phrase = WMO[weather.weather_code] || 'condição indefinida';\n\nconst todaySP = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });\nconst events = $('Events Read').all().map(i => i.json);\nconst todays = events.filter(e => String(e.date) === todaySP);\nconst events_list = todays.length === 0\n  ? 'Nenhum evento registrado hoje.'\n  : todays.map(e => `- ${e.date} ${e.time} ${e.event_name} (${e.location})`).join('\\n');\n\nconst payload = {\n  city: 'Curitiba',\n  weather_time: weather.time,\n  temperature: weather.temperature_2m,\n  humidity: weather.relative_humidity_2m,\n  rain: weather.rain,\n  precipitation: weather.precipitation,\n  wind_speed: weather.wind_speed_10m,\n  weather_phrase,\n  weather_code: weather.weather_code,\n  events_list\n};\n\nconst prompt = `Você é o CampusCast AI, um assistente que cria boletins curtos diários para estudantes.\n\nDados do clima:\n- Cidade: ${payload.city}\n- Condição atual: ${payload.weather_phrase} (código ${payload.weather_code})\n- Temperatura: ${payload.temperature} °C\n- Umidade: ${payload.humidity}%\n- Chuva: ${payload.rain} mm\n- Precipitação: ${payload.precipitation} mm\n- Vento: ${payload.wind_speed} km/h\n- Horário: ${payload.weather_time}\n\nEventos do campus hoje:\n${payload.events_list}\n\nCrie um boletim com:\n1. Uma saudação curta.\n2. Um resumo do clima em uma ou duas frases.\n3. Conselhos práticos para estudantes que vão ao campus.\n4. Um lembrete sobre eventos relevantes, se houver.\n5. Um alerta de risco apenas se necessário.\n\nRegras:\n- Máximo de 120 palavras.\n- Use português claro e natural do Brasil.\n- Não invente eventos.\n- Se não há eventos, diga que não há eventos registrados hoje.\n- Deixe o texto adequado para leitura em áudio (sem listas, sem emojis).`;\n\nreturn [{ json: { payload, prompt } }];"
       },
       "id": "c3ebdf60-8b4f-4f3e-bb3a-0e1b1a8b0003",
       "name": "Build Prompt",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [720, 300]
+      "position": [900, 300]
     },
     {
       "parameters": {
@@ -55,7 +84,7 @@
       "name": "Ollama Generate",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
-      "position": [960, 300]
+      "position": [1120, 300]
     },
     {
       "parameters": {
@@ -73,7 +102,69 @@
       "name": "Kokoro TTS",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
-      "position": [1200, 300]
+      "position": [1340, 300]
+    },
+    {
+      "parameters": {
+        "mode": "manual",
+        "duplicateItem": false,
+        "assignments": {
+          "assignments": [
+            { "id": "a1", "name": "timestamp", "value": "={{ $now.toISO() }}", "type": "string" },
+            { "id": "a2", "name": "city", "value": "={{ $('Build Prompt').first().json.payload.city }}", "type": "string" },
+            { "id": "a3", "name": "temperature", "value": "={{ $('Build Prompt').first().json.payload.temperature }}", "type": "number" },
+            { "id": "a4", "name": "humidity", "value": "={{ $('Build Prompt').first().json.payload.humidity }}", "type": "number" },
+            { "id": "a5", "name": "rain", "value": "={{ $('Build Prompt').first().json.payload.rain }}", "type": "number" },
+            { "id": "a6", "name": "precipitation", "value": "={{ $('Build Prompt').first().json.payload.precipitation }}", "type": "number" },
+            { "id": "a7", "name": "wind_speed", "value": "={{ $('Build Prompt').first().json.payload.wind_speed }}", "type": "number" },
+            { "id": "a8", "name": "events_used", "value": "={{ $('Build Prompt').first().json.payload.events_list }}", "type": "string" },
+            { "id": "a9", "name": "llm_response", "value": "={{ $('Ollama Generate').first().json.response }}", "type": "string" },
+            { "id": "a10", "name": "audio_file", "value": "={{ $json.audio_file }}", "type": "string" },
+            { "id": "a11", "name": "status", "value": "ok", "type": "string" },
+            { "id": "a12", "name": "error_message", "value": "", "type": "string" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "c3ebdf60-8b4f-4f3e-bb3a-0e1b1a8b0007",
+      "name": "Build Success Row",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1560, 300]
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "resource": "sheet",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1DQ1hYUafUCFAGBlfEjy0cBKKGTKhOdTDVlqXzBbHqKk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "results"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": []
+        },
+        "options": {}
+      },
+      "id": "c3ebdf60-8b4f-4f3e-bb3a-0e1b1a8b0008",
+      "name": "Results Append",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [1780, 300],
+      "credentials": {
+        "googleApi": {
+          "id": "xsjRaVzdAvkp6C3F",
+          "name": "Google Sheets — CampusCast"
+        }
+      }
     }
   ],
   "connections": {
@@ -81,6 +172,9 @@
       "main": [[{ "node": "Weather", "type": "main", "index": 0 }]]
     },
     "Weather": {
+      "main": [[{ "node": "Events Read", "type": "main", "index": 0 }]]
+    },
+    "Events Read": {
       "main": [[{ "node": "Build Prompt", "type": "main", "index": 0 }]]
     },
     "Build Prompt": {
@@ -88,6 +182,12 @@
     },
     "Ollama Generate": {
       "main": [[{ "node": "Kokoro TTS", "type": "main", "index": 0 }]]
+    },
+    "Kokoro TTS": {
+      "main": [[{ "node": "Build Success Row", "type": "main", "index": 0 }]]
+    },
+    "Build Success Row": {
+      "main": [[{ "node": "Results Append", "type": "main", "index": 0 }]]
     }
   },
   "pinData": {},
