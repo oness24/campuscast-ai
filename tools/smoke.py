@@ -76,7 +76,25 @@ def probe_ollama() -> ProbeResult:
 
 
 def probe_kokoro() -> ProbeResult:
-    return ProbeResult("kokoro", False, "not implemented yet (Task 7)")
+    body = {"text": "Bom dia. Este é um teste do CampusCast AI."}
+    try:
+        r = requests.post(KOKORO_URL, json=body, timeout=120)
+        r.raise_for_status()
+        data = r.json()
+        audio_file = data.get("audio_file")
+        if not audio_file or not isinstance(audio_file, str):
+            return ProbeResult("kokoro", False, f"no audio_file in response: {data!r}")
+        project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        full_path = os.path.join(project_root, audio_file)
+        if not os.path.exists(full_path):
+            return ProbeResult("kokoro", False, f"audio file missing: {full_path}")
+        size = os.path.getsize(full_path)
+        if size < 1024:
+            return ProbeResult("kokoro", False, f"audio file too small: {size} bytes")
+        duration = data.get("duration_seconds", 0)
+        return ProbeResult("kokoro", True, f"{audio_file} ({size} bytes, {duration}s)")
+    except Exception as e:
+        return ProbeResult("kokoro", False, f"{type(e).__name__}: {e}")
 
 
 PROBES: dict[str, Callable[[], ProbeResult]] = {
