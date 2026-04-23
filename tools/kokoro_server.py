@@ -14,6 +14,7 @@ Run from the project root:
 from __future__ import annotations
 
 import datetime as dt
+import re
 from pathlib import Path
 from typing import Optional
 
@@ -23,6 +24,30 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
 from kokoro import KPipeline
+
+
+_MARKDOWN_STRIP_PATTERNS = [
+    (re.compile(r"\*\*(.+?)\*\*", re.S), r"\1"),
+    (re.compile(r"__(.+?)__", re.S), r"\1"),
+    (re.compile(r"(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)", re.S), r"\1"),
+    (re.compile(r"(?<!_)_(?!_)(.+?)(?<!_)_(?!_)", re.S), r"\1"),
+    (re.compile(r"`+(.+?)`+", re.S), r"\1"),
+    (re.compile(r"^\s{0,3}#{1,6}\s+", re.M), ""),
+    (re.compile(r"^\s{0,3}>\s*", re.M), ""),
+    (re.compile(r"^\s{0,3}[-*+]\s+", re.M), ""),
+    (re.compile(r"^\s{0,3}\d+\.\s+", re.M), ""),
+    (re.compile(r"[*_`~#>]"), ""),
+    (re.compile(r"\n{3,}"), "\n\n"),
+]
+
+
+def strip_markup(text: str) -> str:
+    """Remove markdown-like characters so the TTS engine does not pronounce them."""
+    cleaned = text
+    for pattern, replacement in _MARKDOWN_STRIP_PATTERNS:
+        cleaned = pattern.sub(replacement, cleaned)
+    return cleaned.strip()
+
 
 AUDIO_DIR = Path("audio")
 AUDIO_DIR.mkdir(exist_ok=True)
@@ -54,8 +79,11 @@ def health():
 @app.post("/tts", response_model=TTSResponse)
 def tts(req: TTSRequest) -> TTSResponse:
     voice = req.voice or DEFAULT_VOICE
+    cleaned = strip_markup(req.text)
+    if not cleaned:
+        raise HTTPException(status_code=400, detail="kokoro_tts: text empty after markup strip")
     try:
-        generator = pipeline(req.text, voice=voice)
+        generator = pipeline(cleaned, voice=voice)
         chunks = [audio for _, _, audio in generator]
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"kokoro_tts: {type(e).__name__}: {e}")
