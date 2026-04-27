@@ -28,8 +28,8 @@ OPEN_METEO_URL = (
     "weather_code,wind_speed_10m"
     "&timezone=America/Sao_Paulo"
 )
-OLLAMA_URL = "http://localhost:11434/api/generate"
-KOKORO_URL = "http://localhost:8800/tts"
+OLLAMA_URL = "http://127.0.0.1:11434/api/generate"
+KOKORO_URL = "http://127.0.0.1:8800/tts"
 
 GREEN = "\033[92m"
 RED = "\033[91m"
