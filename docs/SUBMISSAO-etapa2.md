@@ -19,14 +19,16 @@
 | Prova de funcionamento | Saída: `[PASS] weather`, `[PASS] ollama`, `[PASS] kokoro`, `[PASS] convert`, `[PASS] weekly_report` |
 | Arquivo | `tools/smoke.py` |
 
-### 2.2 Integração multichannel: Telegram + Email
+### 2.2 Integração multichannel: WhatsApp + Telegram + Email
 
 | Rubrica | Implementação |
 |---|---|
+| Envio de mensagem WhatsApp | Nó "WhatsApp Bulletin" — Twilio REST API, sandbox `+14155238886` → `+5541988667710` |
+| Notificação de erro WhatsApp | Nó "WhatsApp Error Alert" — mesma API, dispara no ramo de erro |
 | Envio de mensagem Telegram | Nó "Telegram Bulletin" — boletim diário com texto gerado pelo LLM |
 | Notificação de erro Telegram | Nó "Telegram Error Alert" — acionado quando Kokoro TTS ou LLM falha |
 | Email HTML com dados | Nó "Gmail Bulletin" — HTML com tabela de dados do dia + link para Sheets |
-| Email com anexo MP3 | Nó "Gmail Bulletin" — MP3 da narração anexado via `data` (HTTP Request) |
+| Email com anexo MP3 | Nó "Gmail Bulletin" — MP3 da narração anexado via HTTP Request download |
 | Notificação de erro Email | Nó "Gmail Error Alert" — HTML com mensagem de erro + link Sheets |
 | Arquivo workflow | `workflow/campuscast-etapa2.workflow.json` |
 
@@ -64,8 +66,11 @@
 |---|---|
 | Script de stress | `tools/stress_test.py` — N runs (default 5), wall-clock por run, ranking de nós |
 | Resultado 3 runs warm | min=15.1s avg=15.1s max=15.1s, 3/3 sucesso |
-| Gargalo identificado | Ollama Generate (inferência CPU llama3.1:8b) + Kokoro TTS (síntese neural CPU) |
-| Recomendação | GPU acelera ambos de ~12s para ~1-2s; llama3.1:8b pode ser substituído por gemma2:2b para runs mais rápidos |
+| Gargalo identificado | Ollama Generate (inferência CPU llama3.1:8b ~11s) + Kokoro TTS (~2s) |
+| Melhoria proposta 1 | Trocar llama3.1:8b → gemma2:2b: redução de ~50% sem hardware adicional |
+| Melhoria proposta 2 | GPU NVIDIA: inferência LLM de 11s → 0.5s, TTS de 2s → 0.1s |
+| Melhoria proposta 3 | Cache diário: skip Ollama se boletim do dia já existe em Sheets |
+| Reflexão crítica | `docs/09-analise-desempenho.md` |
 
 ### 2.7 Trigger agendado (sem botão manual)
 
@@ -102,5 +107,6 @@ reports/
 | Execução | Cenário | Resultado |
 |---|---|---|
 | 127693 | Sucesso completo (domingo) | 15 nós, Telegram + Gmail enviados |
-| 127702 | Erro path (Kokoro desligado) | 13 nós, Telegram Error + Gmail Error |
+| 127702 | Erro path (Kokoro desligado) | 13 nós, Telegram Error + WhatsApp Error + Gmail Error |
+| 127760 | Sucesso completo com WhatsApp | 16 nós, Telegram + WhatsApp + Gmail com MP3 |
 | 127711–127714 | Stress test 3 runs warm | 3/3 success, avg 15.1s |

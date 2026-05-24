@@ -5,6 +5,15 @@ Endpoints:
     POST /tts             → {"audio_file": "...", "duration_seconds": N}
     POST /convert         → {"mp3_file": "...", "size_bytes": N}
     GET  /weekly-report   → {"xlsx_file": "...", "filename": "...", "rows": N}
+    POST /whatsapp        → {"sid": "...", "status": "queued"}
+    GET  /audio/{file}    → binary MP3/WAV
+    GET  /reports/{file}  → binary XLSX
+
+Environment variables for WhatsApp (Twilio):
+    TWILIO_ACCOUNT_SID
+    TWILIO_AUTH_TOKEN
+    TWILIO_FROM    (default: whatsapp:+14155238886)
+    TWILIO_TO      (default: whatsapp:+5541988667710)
 
 Run from the project root:
     .venv/bin/uvicorn tools.kokoro_server:app --host 127.0.0.1 --port 8800
@@ -224,3 +233,44 @@ def serve_report(filename: str):
         str(file_path),
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     )
+
+
+# ---------------------------------------------------------------------------
+# WhatsApp via Twilio (credentials kept server-side in env vars)
+# ---------------------------------------------------------------------------
+
+import httpx
+
+_TWILIO_SID   = os.environ.get("TWILIO_ACCOUNT_SID", "")
+_TWILIO_TOKEN = os.environ.get("TWILIO_AUTH_TOKEN", "")
+_TWILIO_FROM  = os.environ.get("TWILIO_FROM", "whatsapp:+14155238886")
+_TWILIO_TO    = os.environ.get("TWILIO_TO",   "whatsapp:+5541988667710")
+
+
+class WhatsAppRequest(BaseModel):
+    body: str = Field(..., min_length=1, max_length=1600)
+    to: Optional[str] = None
+
+
+@app.post("/whatsapp")
+def send_whatsapp(req: WhatsAppRequest) -> dict:
+    sid   = _TWILIO_SID
+    token = _TWILIO_TOKEN
+    if not sid or not token:
+        raise HTTPException(status_code=503, detail="Twilio credentials not configured (set TWILIO_ACCOUNT_SID + TWILIO_AUTH_TOKEN)")
+    to = req.to or _TWILIO_TO
+    url = f"https://api.twilio.com/2010-04-01/Accounts/{sid}/Messages.json"
+    try:
+        r = httpx.post(
+            url,
+            auth=(sid, token),
+            data={"From": _TWILIO_FROM, "To": to, "Body": req.body},
+            timeout=15,
+        )
+        r.raise_for_status()
+    except httpx.HTTPStatusError as e:
+        raise HTTPException(status_code=502, detail=f"Twilio error {e.response.status_code}: {e.response.text[:200]}")
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Twilio request failed: {e}")
+    data = r.json()
+    return {"sid": data.get("sid"), "status": data.get("status")}

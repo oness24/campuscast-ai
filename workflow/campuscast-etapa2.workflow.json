@@ -23,7 +23,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Centralised config — edit here to change city, recipients or IDs\nreturn [{ json: {\n  city:       'Curitiba',\n  emailTo:    'onesmus.simiyu@pucpr.edu.br',\n  tgChatId:   '6552761761',\n  sheetId:    '1DQ1hYUafUCFAGBlfEjy0cBKKGTKhOdTDVlqXzBbHqKk'\n}}];"
+        "jsCode": "// Centralised config — edit here to change city, recipients or IDs\nreturn [{ json: {\n  city:       'Curitiba',\n  emailTo:    'onesmus.simiyu@pucpr.edu.br',\n  tgChatId:   '6552761761',\n  sheetId:    '1DQ1hYUafUCFAGBlfEjy0cBKKGTKhOdTDVlqXzBbHqKk',\n  whatsappTo: '+5541988667710'\n}}];"
       },
       "id": "e2-0000",
       "name": "Config",
@@ -684,6 +684,48 @@
           "name": "CampusCast Gmail SMTP"
         }
       }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8800/whatsapp",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ \"body\": \"*CampusCast AI — \" + $now.toFormat('dd/MM/yyyy') + \"*\\n\\n\" + $('Build Success Row').first().json.llm_response + \"\\n\\n📍 \" + $('Build Success Row').first().json.city + \" | 🌡️ \" + $('Build Success Row').first().json.temperature + \"°C | 💧 \" + $('Build Success Row').first().json.humidity + \"%\" }) }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "e2-0023",
+      "name": "WhatsApp Bulletin",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2880,
+        600
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8800/whatsapp",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ \"body\": \"⚠️ CampusCast AI — FALHA \" + $now.toFormat('dd/MM/yyyy') + \"\\n\\nErro: \" + $('Build Error Row').first().json.error_message }) }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "e2-0024",
+      "name": "WhatsApp Error Alert",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2880,
+        60
+      ]
     }
   ],
   "connections": {
@@ -819,7 +861,7 @@
       "main": [
         [
           {
-            "node": "Gmail Error Alert",
+            "node": "WhatsApp Error Alert",
             "type": "main",
             "index": 0
           }
@@ -852,7 +894,7 @@
       "main": [
         [
           {
-            "node": "Download MP3",
+            "node": "WhatsApp Bulletin",
             "type": "main",
             "index": 0
           }
@@ -909,6 +951,28 @@
         [
           {
             "node": "Gmail Weekly XLSX",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "WhatsApp Bulletin": {
+      "main": [
+        [
+          {
+            "node": "Download MP3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "WhatsApp Error Alert": {
+      "main": [
+        [
+          {
+            "node": "Gmail Error Alert",
             "type": "main",
             "index": 0
           }
