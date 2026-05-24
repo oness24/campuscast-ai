@@ -1,11 +1,10 @@
 """FastAPI wrapper around Kokoro TTS.
 
 Endpoints:
-    GET  /health       → {"status": "ok"}
-    POST /tts          → {"audio_file": "...", "duration_seconds": N}
-
-The server writes WAVs to ./audio/<iso-timestamp>.wav relative to the
-current working directory and returns the relative path.
+    GET  /health          → {"status": "ok"}
+    POST /tts             → {"audio_file": "...", "duration_seconds": N}
+    POST /convert         → {"mp3_file": "...", "size_bytes": N}
+    GET  /weekly-report   → {"xlsx_file": "...", "filename": "...", "rows": N}
 
 Run from the project root:
     .venv/bin/uvicorn tools.kokoro_server:app --host 127.0.0.1 --port 8800
@@ -14,16 +13,32 @@ Run from the project root:
 from __future__ import annotations
 
 import datetime as dt
+import io
+import os
 import re
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
+import lameenc
 import numpy as np
+import openpyxl
 import soundfile as sf
 from fastapi import FastAPI, HTTPException
+from google.oauth2.service_account import Credentials
+from googleapiclient.discovery import build
 from pydantic import BaseModel, Field
 
 from kokoro import KPipeline
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+
+_SA_KEY = PROJECT_ROOT / "credentials" / "campuscast-n8n.json"
+_SHEET_ID = os.environ.get(
+    "CAMPUSCAST_SHEET_ID",
+    "1DQ1hYUafUCFAGBlfEjy0cBKKGTKhOdTDVlqXzBbHqKk",
+)
+_SHEETS_SCOPES = ["https://www.googleapis.com/auth/spreadsheets.readonly"]
 
 
 _MARKDOWN_STRIP_PATTERNS = [
@@ -100,3 +115,87 @@ def tts(req: TTSRequest) -> TTSResponse:
         audio_file=str(out_path),
         duration_seconds=round(len(audio) / SAMPLE_RATE, 2),
     )
+
+
+# ---------------------------------------------------------------------------
+# WAV → MP3 conversion
+# ---------------------------------------------------------------------------
+
+def _wav_to_mp3(wav_path: Path) -> Path:
+    data, samplerate = sf.read(str(wav_path), dtype="float32")
+    if data.ndim > 1:
+        data = data[:, 0]
+    pcm = (data * 32767).astype(np.int16)
+    enc = lameenc.Encoder()
+    enc.set_bit_rate(128)
+    enc.set_in_sample_rate(samplerate)
+    enc.set_channels(1)
+    enc.set_quality(2)
+    mp3_bytes = enc.encode(pcm.tobytes()) + enc.flush()
+    mp3_path = wav_path.with_suffix(".mp3")
+    mp3_path.write_bytes(mp3_bytes)
+    return mp3_path
+
+
+class ConvertRequest(BaseModel):
+    wav_path: str
+
+
+@app.post("/convert")
+def convert_wav_to_mp3(req: ConvertRequest) -> dict:
+    wav = PROJECT_ROOT / req.wav_path
+    if not wav.exists():
+        raise HTTPException(status_code=400, detail=f"WAV not found: {req.wav_path}")
+    try:
+        mp3 = _wav_to_mp3(wav)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Conversion failed: {e}")
+    return {
+        "mp3_file": str(mp3.relative_to(PROJECT_ROOT)),
+        "size_bytes": mp3.stat().st_size,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Weekly XLSX report
+# ---------------------------------------------------------------------------
+
+@app.get("/weekly-report")
+def weekly_report() -> dict:
+    if not _SA_KEY.exists():
+        raise HTTPException(status_code=503, detail="Service account key not found")
+    creds = Credentials.from_service_account_file(str(_SA_KEY), scopes=_SHEETS_SCOPES)
+    service = build("sheets", "v4", credentials=creds, cache_discovery=False)
+    result = (
+        service.spreadsheets()
+        .values()
+        .get(spreadsheetId=_SHEET_ID, range="results!A:M")
+        .execute()
+    )
+    values = result.get("values", [])
+    if len(values) < 2:
+        raise HTTPException(status_code=404, detail="No results data in sheet yet")
+
+    headers = values[0]
+    last_seven = values[1:][-7:]
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Semana"
+    ws.append(headers)
+    for row in last_seven:
+        padded = row + [""] * max(0, len(headers) - len(row))
+        ws.append(padded[: len(headers)])
+
+    reports_dir = PROJECT_ROOT / "reports"
+    reports_dir.mkdir(exist_ok=True)
+    week_label = datetime.now(timezone.utc).strftime("%Y-W%V")
+    filename = f"campuscast-semana-{week_label}.xlsx"
+    xlsx_path = reports_dir / filename
+    wb.save(str(xlsx_path))
+
+    return {
+        "xlsx_file": str(xlsx_path.relative_to(PROJECT_ROOT)),
+        "filename": filename,
+        "rows": len(last_seven),
+    }

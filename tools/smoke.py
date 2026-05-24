@@ -97,10 +97,53 @@ def probe_kokoro() -> ProbeResult:
         return ProbeResult("kokoro", False, f"{type(e).__name__}: {e}")
 
 
+def probe_convert() -> ProbeResult:
+    """Requires at least one WAV in audio/. Run probe_kokoro first if none exist."""
+    import glob
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    wavs = sorted(glob.glob(os.path.join(project_root, "audio", "*.wav")), reverse=True)
+    if not wavs:
+        return ProbeResult("convert", False, "no WAV files in audio/ — run probe_kokoro first")
+    newest_wav = os.path.relpath(wavs[0], project_root)
+    try:
+        r = requests.post("http://127.0.0.1:8800/convert", json={"wav_path": newest_wav}, timeout=30)
+        r.raise_for_status()
+        data = r.json()
+        mp3_file = data.get("mp3_file")
+        size = data.get("size_bytes", 0)
+        if not mp3_file or size < 1024:
+            return ProbeResult("convert", False, f"bad response: {data!r}")
+        return ProbeResult("convert", True, f"{mp3_file} ({size} bytes)")
+    except Exception as e:
+        return ProbeResult("convert", False, f"{type(e).__name__}: {e}")
+
+
+def probe_weekly_report() -> ProbeResult:
+    try:
+        r = requests.get("http://127.0.0.1:8800/weekly-report", timeout=30)
+        r.raise_for_status()
+        data = r.json()
+        rows = data.get("rows", 0)
+        filename = data.get("filename", "")
+        xlsx_file = data.get("xlsx_file", "")
+        if not xlsx_file:
+            return ProbeResult("weekly_report", False, f"no xlsx_file in response: {data!r}")
+        project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        full_path = os.path.join(project_root, xlsx_file)
+        if not os.path.exists(full_path):
+            return ProbeResult("weekly_report", False, f"xlsx missing on disk: {full_path}")
+        size = os.path.getsize(full_path)
+        return ProbeResult("weekly_report", True, f"{filename} ({rows} rows, {size} bytes)")
+    except Exception as e:
+        return ProbeResult("weekly_report", False, f"{type(e).__name__}: {e}")
+
+
 PROBES: dict[str, Callable[[], ProbeResult]] = {
     "weather": probe_weather,
     "ollama": probe_ollama,
     "kokoro": probe_kokoro,
+    "convert": probe_convert,
+    "weekly_report": probe_weekly_report,
 }
 
 

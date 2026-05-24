@@ -1,0 +1,418 @@
+{
+  "name": "CampusCast AI — Etapa 2",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "cronExpression", "expression": "0 7 * * *" }]
+        }
+      },
+      "id": "e2-0001",
+      "name": "Schedule 07h",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Centralised config — edit here to change city, recipients or IDs\nreturn [{ json: {\n  city:       'Curitiba',\n  emailTo:    'onesmus.simiyu@pucpr.edu.br',\n  tgChatId:   '6552761761',\n  sheetId:    '1DQ1hYUafUCFAGBlfEjy0cBKKGTKhOdTDVlqXzBbHqKk'\n}}];"
+      },
+      "id": "e2-0000",
+      "name": "Config",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://api.open-meteo.com/v1/forecast",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "latitude",  "value": "-25.4284" },
+            { "name": "longitude", "value": "-49.2733" },
+            { "name": "current",   "value": "temperature_2m,relative_humidity_2m,precipitation,rain,weather_code,wind_speed_10m" },
+            { "name": "timezone",  "value": "America/Sao_Paulo" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e2-0002",
+      "name": "Weather",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": { "__rl": true, "mode": "id", "value": "={{ $('Config').first().json.sheetId }}" },
+        "sheetName":  { "__rl": true, "mode": "name", "value": "events" },
+        "options": {}
+      },
+      "id": "e2-0003",
+      "name": "Events Read",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [900, 300],
+      "credentials": {
+        "googleApi": { "id": "xsjRaVzdAvkp6C3F", "name": "Google Sheets — CampusCast" }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const weather = $('Weather').first().json.current;\nconst cfg = $('Config').first().json;\n\nconst WMO = {\n  0: 'céu limpo',\n  1: 'parcialmente nublado', 2: 'parcialmente nublado',\n  3: 'céu encoberto',\n  45: 'neblina', 48: 'neblina',\n  51: 'garoa', 53: 'garoa', 55: 'garoa',\n  61: 'chuva fraca', 63: 'chuva moderada', 65: 'chuva forte',\n  66: 'chuva congelante', 67: 'chuva congelante',\n  71: 'neve', 73: 'neve', 75: 'neve',\n  80: 'pancadas de chuva', 81: 'pancadas de chuva', 82: 'pancadas de chuva',\n  95: 'trovoada', 96: 'trovoada', 99: 'trovoada'\n};\nconst weather_phrase = WMO[weather.weather_code] || 'condição indefinida';\n\nconst todaySP = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });\nconst events = $('Events Read').all().map(i => i.json);\nconst todays = events.filter(e => String(e.date) === todaySP);\nconst events_list = todays.length === 0\n  ? 'Nenhum evento registrado hoje.'\n  : todays.map(e => `- ${e.date} ${e.time} ${e.event_name} (${e.location})`).join('\\n');\n\nconst is_raining = (weather.rain > 0) || (weather.precipitation > 0) || [51,53,55,61,63,65,66,67,80,81,82].includes(weather.weather_code);\nconst is_hot    = weather.temperature_2m >= 28;\nconst is_cold   = weather.temperature_2m <= 12;\nconst is_windy  = weather.wind_speed_10m >= 30;\nconst is_stormy = [95,96,99].includes(weather.weather_code);\n\nconst advice_rules = [];\nif (is_raining)  advice_rules.push('- Há chuva ou garoa agora: recomende levar guarda-chuva ou capa.');\nif (!is_raining) advice_rules.push('- NÃO há chuva. NÃO mencione guarda-chuva, chuva ou proteção contra chuva.');\nif (is_cold)     advice_rules.push('- Temperatura baixa: recomende agasalho.');\nif (is_hot)      advice_rules.push('- Temperatura alta: recomende hidratação.');\nif (!is_cold && !is_hot) advice_rules.push('- Temperatura amena: NÃO recomende agasalho nem reforço de hidratação.');\nif (is_windy)    advice_rules.push('- Vento forte (>30 km/h): alerte sobre o vento.');\nif (!is_windy)   advice_rules.push('- Vento fraco/moderado: NÃO mencione vento como fator relevante.');\nif (is_stormy)   advice_rules.push('- ALERTA: há trovoada. Inclua alerta de risco claro.');\nif (!is_stormy && !is_raining && !is_windy) advice_rules.push('- Sem riscos meteorológicos: indique explicitamente que não há alertas hoje.');\n\nconst payload = {\n  city: cfg.city,\n  weather_time: weather.time,\n  temperature: weather.temperature_2m,\n  humidity: weather.relative_humidity_2m,\n  rain: weather.rain,\n  precipitation: weather.precipitation,\n  wind_speed: weather.wind_speed_10m,\n  weather_phrase, weather_code: weather.weather_code,\n  events_list, is_raining, is_hot, is_cold, is_windy, is_stormy\n};\n\nconst prompt = `Você é o CampusCast AI. Produza um boletim curto em português do Brasil para estudantes, estritamente fiel aos dados.\\n\\n### DADOS (fonte única da verdade — não invente nada fora daqui)\\nCidade: ${payload.city}\\nHorário: ${payload.weather_time}\\nCondição atual: ${payload.weather_phrase} (código WMO ${payload.weather_code})\\nTemperatura: ${payload.temperature} °C\\nUmidade: ${payload.humidity}%\\nChuva (mm na última hora): ${payload.rain}\\nPrecipitação total (mm): ${payload.precipitation}\\nVento: ${payload.wind_speed} km/h\\n\\n### EVENTOS DO CAMPUS HOJE\\n${payload.events_list}\\n\\n### REGRAS DE CONTEÚDO (obrigatórias)\\n${advice_rules.join('\\n')}\\n\\n### ESTRUTURA\\n1. Saudação breve (1 frase).\\n2. Resumo do clima (1 frase) usando APENAS a Condição atual e a temperatura.\\n3. Conselho prático: inclua apenas os conselhos autorizados pelas regras listadas. Sem acréscimos não autorizados.\\n4. Lembrete de eventos: cite cada evento listado. Se a lista disser Nenhum evento registrado hoje, diga isso com estas palavras.\\n5. Alerta final: se as regras autorizarem um alerta, inclua-o; caso contrário, escreva exatamente Sem alertas de risco para hoje.\\n\\n### REGRAS GLOBAIS\\n- Máximo de 120 palavras.\\n- Português claro, natural, adequado para leitura em áudio.\\n- PROIBIDO: asteriscos (*), sublinhados (_), crases, hashtags (#), emojis, qualquer marcação markdown.\\n- Produza APENAS prosa corrida. Sem títulos, sem negrito, sem listas com bullets.\\n- NÃO invente eventos, clima, nem riscos.`;\n\nreturn [{ json: { payload, prompt } }];"
+      },
+      "id": "e2-0004",
+      "name": "Build Prompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:11434/api/generate",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"llama3.1:8b\",\n  \"prompt\": {{ JSON.stringify($json.prompt) }},\n  \"stream\": false,\n  \"options\": { \"temperature\": 0.3, \"top_p\": 0.9, \"num_predict\": 220 }\n}",
+        "options": { "timeout": 120000 }
+      },
+      "onError": "continueRegularOutput",
+      "id": "e2-0005",
+      "name": "Ollama Generate",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [1340, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8800/tts",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={ \"text\": {{ JSON.stringify($json.response) }} }",
+        "options": { "timeout": 120000 }
+      },
+      "onError": "continueRegularOutput",
+      "id": "e2-0006",
+      "name": "Kokoro TTS",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [1560, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8800/convert",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={ \"wav_path\": {{ JSON.stringify($json.audio_file) }} }",
+        "options": { "timeout": 30000 }
+      },
+      "onError": "continueRegularOutput",
+      "id": "e2-0007",
+      "name": "Convert WAV→MP3",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [1780, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose" },
+          "conditions": [
+            {
+              "id": "cond-error",
+              "leftValue": "={{ $json.error }}",
+              "rightValue": "",
+              "operator": { "type": "object", "operation": "exists", "singleValue": true }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "e2-0008",
+      "name": "Check Result",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [2000, 300]
+    },
+    {
+      "parameters": {
+        "mode": "manual",
+        "duplicateItem": false,
+        "assignments": {
+          "assignments": [
+            { "id": "b1",  "name": "timestamp",    "value": "={{ $now.toISO() }}", "type": "string" },
+            { "id": "b2",  "name": "city",         "value": "={{ $('Config').first().json.city }}", "type": "string" },
+            { "id": "b3",  "name": "temperature",  "value": "", "type": "string" },
+            { "id": "b4",  "name": "humidity",     "value": "", "type": "string" },
+            { "id": "b5",  "name": "rain",         "value": "", "type": "string" },
+            { "id": "b6",  "name": "precipitation","value": "", "type": "string" },
+            { "id": "b7",  "name": "wind_speed",   "value": "", "type": "string" },
+            { "id": "b8",  "name": "events_used",  "value": "", "type": "string" },
+            { "id": "b9",  "name": "llm_response", "value": "", "type": "string" },
+            { "id": "b10", "name": "audio_file",   "value": "", "type": "string" },
+            { "id": "b11", "name": "mp3_file",     "value": "", "type": "string" },
+            { "id": "b12", "name": "status",       "value": "error", "type": "string" },
+            { "id": "b13", "name": "error_message","value": "={{ $json.error ? JSON.stringify($json.error) : 'unknown error' }}", "type": "string" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e2-0009",
+      "name": "Build Error Row",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [2220, 160]
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "resource": "sheet",
+        "operation": "append",
+        "documentId": { "__rl": true, "mode": "id", "value": "={{ $('Config').first().json.sheetId }}" },
+        "sheetName":  { "__rl": true, "mode": "name", "value": "results" },
+        "columns": { "mappingMode": "autoMapInputData", "value": {}, "matchingColumns": [] },
+        "options": {}
+      },
+      "id": "e2-0010",
+      "name": "Results Append Error",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [2440, 160],
+      "credentials": {
+        "googleApi": { "id": "xsjRaVzdAvkp6C3F", "name": "Google Sheets — CampusCast" }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Config').first().json.tgChatId }}",
+        "text":   "=⚠️ CampusCast ERRO {{ $now.toFormat('dd/MM/yyyy HH:mm') }}: {{ $('Build Error Row').first().json.error_message }}",
+        "additionalFields": {}
+      },
+      "id": "e2-0011",
+      "name": "Telegram Error Alert",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [2660, 160],
+      "credentials": {
+        "telegramApi": { "id": "LANK6wg1jeq1k3Qr", "name": "CampusCast Telegram Bot" }
+      }
+    },
+    {
+      "parameters": {
+        "fromEmail": "contego704@gmail.com",
+        "toEmail":   "={{ $('Config').first().json.emailTo }}",
+        "subject":   "=[CampusCast] FALHA {{ $now.toFormat('dd/MM/yyyy') }}",
+        "emailFormat": "html",
+        "message":   "=<h2>CampusCast AI — Falha de Execução</h2><p><b>Data:</b> {{ $now.toISO() }}</p><p><b>Erro:</b> {{ $('Build Error Row').first().json.error_message }}</p><p><a href='https://docs.google.com/spreadsheets/d/{{ $('Config').first().json.sheetId }}'>Ver planilha de resultados</a></p>",
+        "options": {}
+      },
+      "id": "e2-0012",
+      "name": "Gmail Error Alert",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [2880, 160],
+      "credentials": {
+        "smtp": { "id": "vQe0CdBPhsb5LSYj", "name": "CampusCast Gmail SMTP" }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "manual",
+        "duplicateItem": false,
+        "assignments": {
+          "assignments": [
+            { "id": "a1",  "name": "timestamp",    "value": "={{ $now.toISO() }}", "type": "string" },
+            { "id": "a2",  "name": "city",         "value": "={{ $('Config').first().json.city }}", "type": "string" },
+            { "id": "a3",  "name": "temperature",  "value": "={{ $('Build Prompt').first().json.payload.temperature }}", "type": "number" },
+            { "id": "a4",  "name": "humidity",     "value": "={{ $('Build Prompt').first().json.payload.humidity }}", "type": "number" },
+            { "id": "a5",  "name": "rain",         "value": "={{ $('Build Prompt').first().json.payload.rain }}", "type": "number" },
+            { "id": "a6",  "name": "precipitation","value": "={{ $('Build Prompt').first().json.payload.precipitation }}", "type": "number" },
+            { "id": "a7",  "name": "wind_speed",   "value": "={{ $('Build Prompt').first().json.payload.wind_speed }}", "type": "number" },
+            { "id": "a8",  "name": "events_used",  "value": "={{ $('Build Prompt').first().json.payload.events_list }}", "type": "string" },
+            { "id": "a9",  "name": "llm_response", "value": "={{ $('Ollama Generate').first().json.response.replace(/\\*\\*([^*]+)\\*\\*/g, '$1').replace(/\\*([^*]+)\\*/g, '$1').replace(/[*_`#>~]/g, '').replace(/\\s+/g, ' ').trim() }}", "type": "string" },
+            { "id": "a10", "name": "audio_file",   "value": "={{ $('Kokoro TTS').first().json.audio_file }}", "type": "string" },
+            { "id": "a11", "name": "mp3_file",     "value": "={{ $json.mp3_file }}", "type": "string" },
+            { "id": "a12", "name": "status",       "value": "ok", "type": "string" },
+            { "id": "a13", "name": "error_message","value": "", "type": "string" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e2-0013",
+      "name": "Build Success Row",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [2220, 440]
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "resource": "sheet",
+        "operation": "append",
+        "documentId": { "__rl": true, "mode": "id", "value": "={{ $('Config').first().json.sheetId }}" },
+        "sheetName":  { "__rl": true, "mode": "name", "value": "results" },
+        "columns": { "mappingMode": "autoMapInputData", "value": {}, "matchingColumns": [] },
+        "options": {}
+      },
+      "id": "e2-0014",
+      "name": "Results Append OK",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [2440, 440],
+      "credentials": {
+        "googleApi": { "id": "xsjRaVzdAvkp6C3F", "name": "Google Sheets — CampusCast" }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Config').first().json.tgChatId }}",
+        "text":   "={{ $('Build Success Row').first().json.llm_response }}",
+        "additionalFields": {}
+      },
+      "id": "e2-0015",
+      "name": "Telegram Bulletin",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [2660, 440],
+      "credentials": {
+        "telegramApi": { "id": "LANK6wg1jeq1k3Qr", "name": "CampusCast Telegram Bot" }
+      }
+    },
+    {
+      "parameters": {
+        "filePath": "=/home/oness24/Desktop/AI/pucpr/campuscast-ai/{{ $('Build Success Row').first().json.mp3_file }}",
+        "dataPropertyName": "mp3"
+      },
+      "id": "e2-0016",
+      "name": "Read MP3 Binary",
+      "type": "n8n-nodes-base.readBinaryFile",
+      "typeVersion": 1,
+      "position": [2880, 440]
+    },
+    {
+      "parameters": {
+        "fromEmail": "contego704@gmail.com",
+        "toEmail":   "={{ $('Config').first().json.emailTo }}",
+        "subject":   "=CampusCast AI — Boletim {{ $now.toFormat('dd/MM/yyyy') }}",
+        "emailFormat": "html",
+        "message":   "=<h2>CampusCast AI — Boletim {{ $now.toFormat('dd/MM/yyyy') }}</h2><p>{{ $('Build Success Row').first().json.llm_response }}</p><hr><h3>Dados do Dia</h3><table border='1' cellpadding='4' style='border-collapse:collapse'><tr><td><b>Cidade</b></td><td>{{ $('Build Success Row').first().json.city }}</td></tr><tr><td><b>Temperatura</b></td><td>{{ $('Build Success Row').first().json.temperature }} °C</td></tr><tr><td><b>Umidade</b></td><td>{{ $('Build Success Row').first().json.humidity }}%</td></tr><tr><td><b>Chuva</b></td><td>{{ $('Build Success Row').first().json.rain }} mm</td></tr><tr><td><b>Vento</b></td><td>{{ $('Build Success Row').first().json.wind_speed }} km/h</td></tr><tr><td><b>Eventos</b></td><td>{{ $('Build Success Row').first().json.events_used }}</td></tr></table><br><p><a href='https://docs.google.com/spreadsheets/d/{{ $('Config').first().json.sheetId }}'>Ver planilha de resultados</a></p>",
+        "attachments": "mp3",
+        "options": {}
+      },
+      "id": "e2-0017",
+      "name": "Gmail Bulletin",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [3100, 440],
+      "credentials": {
+        "smtp": { "id": "vQe0CdBPhsb5LSYj", "name": "CampusCast Gmail SMTP" }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose" },
+          "conditions": [
+            {
+              "id": "cond-monday",
+              "leftValue": "={{ $now.weekday }}",
+              "rightValue": "1",
+              "operator": { "type": "number", "operation": "equals" }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "e2-0018",
+      "name": "Is Monday?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [3320, 440]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "http://127.0.0.1:8800/weekly-report",
+        "options": { "timeout": 30000 }
+      },
+      "id": "e2-0019",
+      "name": "Get Weekly Report",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [3540, 360]
+    },
+    {
+      "parameters": {
+        "filePath": "=/home/oness24/Desktop/AI/pucpr/campuscast-ai/{{ $json.xlsx_file }}",
+        "dataPropertyName": "xlsx"
+      },
+      "id": "e2-0020",
+      "name": "Read XLSX Binary",
+      "type": "n8n-nodes-base.readBinaryFile",
+      "typeVersion": 1,
+      "position": [3760, 360]
+    },
+    {
+      "parameters": {
+        "fromEmail": "contego704@gmail.com",
+        "toEmail":   "={{ $('Config').first().json.emailTo }}",
+        "subject":   "=CampusCast AI — Relatório Semanal {{ $now.toFormat('dd/MM/yyyy') }}",
+        "emailFormat": "html",
+        "message":   "=<h2>CampusCast AI — Relatório Semanal</h2><p>Em anexo: {{ $('Get Weekly Report').first().json.filename }} com {{ $('Get Weekly Report').first().json.rows }} execuções da última semana.</p>",
+        "attachments": "xlsx",
+        "options": {}
+      },
+      "id": "e2-0021",
+      "name": "Gmail Weekly XLSX",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [3980, 360],
+      "credentials": {
+        "smtp": { "id": "vQe0CdBPhsb5LSYj", "name": "CampusCast Gmail SMTP" }
+      }
+    }
+  ],
+  "connections": {
+    "Schedule 07h":        { "main": [[{ "node": "Config",           "type": "main", "index": 0 }]] },
+    "Config":              { "main": [[{ "node": "Weather",          "type": "main", "index": 0 }]] },
+    "Weather":             { "main": [[{ "node": "Events Read",      "type": "main", "index": 0 }]] },
+    "Events Read":         { "main": [[{ "node": "Build Prompt",     "type": "main", "index": 0 }]] },
+    "Build Prompt":        { "main": [[{ "node": "Ollama Generate",  "type": "main", "index": 0 }]] },
+    "Ollama Generate":     { "main": [[{ "node": "Kokoro TTS",       "type": "main", "index": 0 }]] },
+    "Kokoro TTS":          { "main": [[{ "node": "Convert WAV→MP3",  "type": "main", "index": 0 }]] },
+    "Convert WAV→MP3":     { "main": [[{ "node": "Check Result",    "type": "main", "index": 0 }]] },
+    "Check Result": {
+      "main": [
+        [{ "node": "Build Error Row",   "type": "main", "index": 0 }],
+        [{ "node": "Build Success Row", "type": "main", "index": 0 }]
+      ]
+    },
+    "Build Error Row":     { "main": [[{ "node": "Results Append Error", "type": "main", "index": 0 }]] },
+    "Results Append Error":{ "main": [[{ "node": "Telegram Error Alert", "type": "main", "index": 0 }]] },
+    "Telegram Error Alert":{ "main": [[{ "node": "Gmail Error Alert",    "type": "main", "index": 0 }]] },
+    "Build Success Row":   { "main": [[{ "node": "Results Append OK",    "type": "main", "index": 0 }]] },
+    "Results Append OK":   { "main": [[{ "node": "Telegram Bulletin",    "type": "main", "index": 0 }]] },
+    "Telegram Bulletin":   { "main": [[{ "node": "Read MP3 Binary",      "type": "main", "index": 0 }]] },
+    "Read MP3 Binary":     { "main": [[{ "node": "Gmail Bulletin",       "type": "main", "index": 0 }]] },
+    "Gmail Bulletin":      { "main": [[{ "node": "Is Monday?",           "type": "main", "index": 0 }]] },
+    "Is Monday?": {
+      "main": [
+        [{ "node": "Get Weekly Report", "type": "main", "index": 0 }],
+        []
+      ]
+    },
+    "Get Weekly Report":   { "main": [[{ "node": "Read XLSX Binary",     "type": "main", "index": 0 }]] },
+    "Read XLSX Binary":    { "main": [[{ "node": "Gmail Weekly XLSX",    "type": "main", "index": 0 }]] }
+  },
+  "pinData": {},
+  "settings": { "executionOrder": "v1", "timezone": "America/Sao_Paulo" }
+}
