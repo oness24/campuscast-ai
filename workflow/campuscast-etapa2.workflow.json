@@ -134,7 +134,8 @@
       "position": [
         1340,
         300
-      ]
+      ],
+      "continueOnFail": true
     },
     {
       "parameters": {
@@ -156,7 +157,8 @@
       "position": [
         1560,
         300
-      ]
+      ],
+      "continueOnFail": true
     },
     {
       "parameters": {
@@ -178,7 +180,8 @@
       "position": [
         1780,
         300
-      ]
+      ],
+      "continueOnFail": true
     },
     {
       "parameters": {
@@ -190,12 +193,12 @@
           },
           "conditions": [
             {
-              "id": "cond-error",
-              "leftValue": "={{ $json.error }}",
+              "id": "cond-mp3",
+              "leftValue": "={{ $json.mp3_file }}",
               "rightValue": "",
               "operator": {
-                "type": "object",
-                "operation": "exists",
+                "type": "string",
+                "operation": "notExists",
                 "singleValue": true
               }
             }
