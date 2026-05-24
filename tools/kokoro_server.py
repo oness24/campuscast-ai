@@ -25,6 +25,7 @@ import numpy as np
 import openpyxl
 import soundfile as sf
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import FileResponse
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 from pydantic import BaseModel, Field
@@ -199,3 +200,27 @@ def weekly_report() -> dict:
         "filename": filename,
         "rows": len(last_seven),
     }
+
+
+# ---------------------------------------------------------------------------
+# Static file serving (bypasses n8n N8N_RESTRICT_FILE_ACCESS_TO)
+# ---------------------------------------------------------------------------
+
+@app.get("/audio/{filename}")
+def serve_audio(filename: str):
+    file_path = PROJECT_ROOT / "audio" / filename
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail=f"File not found: {filename}")
+    media = "audio/mpeg" if filename.endswith(".mp3") else "audio/wav"
+    return FileResponse(str(file_path), media_type=media)
+
+
+@app.get("/reports/{filename}")
+def serve_report(filename: str):
+    file_path = PROJECT_ROOT / "reports" / filename
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail=f"File not found: {filename}")
+    return FileResponse(
+        str(file_path),
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
