@@ -368,7 +368,10 @@
           "id": "LANK6wg1jeq1k3Qr",
           "name": "CampusCast Telegram Bot"
         }
-      }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
     },
     {
       "parameters": {
@@ -547,7 +550,10 @@
           "id": "LANK6wg1jeq1k3Qr",
           "name": "CampusCast Telegram Bot"
         }
-      }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
     },
     {
       "parameters": {
