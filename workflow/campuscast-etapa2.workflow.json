@@ -23,7 +23,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Centralised config — edit here to change city, recipients or IDs\nreturn [{ json: {\n  city:       'Curitiba',\n  emailTo:    'onesmus.simiyu@pucpr.edu.br',\n  tgChatId:   '6552761761',\n  sheetId:    '1DQ1hYUafUCFAGBlfEjy0cBKKGTKhOdTDVlqXzBbHqKk',\n  whatsappTo: '+5541988667710'\n}}];"
+        "jsCode": "// Centralised config — edit here to change city, recipients or IDs\nreturn [{ json: {\n  city:       'Curitiba',\n  emailTo:    'onesmus.simiyu@pucpr.edu.br',\n  tgChatId:   '6552761761',\n  sheetId:    '1DQ1hYUafUCFAGBlfEjy0cBKKGTKhOdTDVlqXzBbHqKk',\n  whatsappTo: '+554188667710'\n}}];"
       },
       "id": "e2-0000",
       "name": "Config",
