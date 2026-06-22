@@ -379,7 +379,7 @@
         "toEmail": "={{ $('Config').first().json.emailTo }}",
         "subject": "=[CampusCast] FALHA {{ $now.toFormat('dd/MM/yyyy') }}",
         "emailFormat": "html",
-        "message": "=<h2>CampusCast AI — Falha de Execução</h2><p><b>Data:</b> {{ $now.toISO() }}</p><p><b>Erro:</b> {{ $('Build Error Row').first().json.error_message }}</p><p><a href='https://docs.google.com/spreadsheets/d/{{ $('Config').first().json.sheetId }}'>Ver planilha de resultados</a></p>",
+        "html": "=<h2>CampusCast AI — Falha de Execução</h2><p><b>Data:</b> {{ $now.toISO() }}</p><p><b>Erro:</b> {{ $('Build Error Row').first().json.error_message }}</p><p><a href='https://docs.google.com/spreadsheets/d/{{ $('Config').first().json.sheetId }}'>Ver planilha de resultados</a></p>",
         "options": {}
       },
       "id": "e2-0012",
@@ -580,7 +580,7 @@
         "toEmail": "={{ $('Config').first().json.emailTo }}",
         "subject": "=CampusCast AI — Boletim {{ $now.toFormat('dd/MM/yyyy') }}",
         "emailFormat": "html",
-        "message": "=<h2>CampusCast AI — Boletim {{ $now.toFormat('dd/MM/yyyy') }}</h2><p>{{ $('Build Success Row').first().json.llm_response }}</p><hr><h3>Dados do Dia</h3><table border='1' cellpadding='4' style='border-collapse:collapse'><tr><td><b>Cidade</b></td><td>{{ $('Build Success Row').first().json.city }}</td></tr><tr><td><b>Temperatura</b></td><td>{{ $('Build Success Row').first().json.temperature }} °C</td></tr><tr><td><b>Umidade</b></td><td>{{ $('Build Success Row').first().json.humidity }}%</td></tr><tr><td><b>Chuva</b></td><td>{{ $('Build Success Row').first().json.rain }} mm</td></tr><tr><td><b>Vento</b></td><td>{{ $('Build Success Row').first().json.wind_speed }} km/h</td></tr><tr><td><b>Eventos</b></td><td>{{ $('Build Success Row').first().json.events_used }}</td></tr></table><br><p><a href='https://docs.google.com/spreadsheets/d/{{ $('Config').first().json.sheetId }}'>Ver planilha de resultados</a></p>",
+        "html": "=<h2>CampusCast AI — Boletim {{ $now.toFormat('dd/MM/yyyy') }}</h2><p>{{ $('Build Success Row').first().json.llm_response }}</p><hr><h3>Dados do Dia</h3><table border='1' cellpadding='4' style='border-collapse:collapse'><tr><td><b>Cidade</b></td><td>{{ $('Build Success Row').first().json.city }}</td></tr><tr><td><b>Temperatura</b></td><td>{{ $('Build Success Row').first().json.temperature }} °C</td></tr><tr><td><b>Umidade</b></td><td>{{ $('Build Success Row').first().json.humidity }}%</td></tr><tr><td><b>Chuva</b></td><td>{{ $('Build Success Row').first().json.rain }} mm</td></tr><tr><td><b>Vento</b></td><td>{{ $('Build Success Row').first().json.wind_speed }} km/h</td></tr><tr><td><b>Eventos</b></td><td>{{ $('Build Success Row').first().json.events_used }}</td></tr></table><br><p><a href='https://docs.google.com/spreadsheets/d/{{ $('Config').first().json.sheetId }}'>Ver planilha de resultados</a></p>",
         "attachments": "data",
         "options": {}
       },
@@ -672,7 +672,7 @@
         "toEmail": "={{ $('Config').first().json.emailTo }}",
         "subject": "=CampusCast AI — Relatório Semanal {{ $now.toFormat('dd/MM/yyyy') }}",
         "emailFormat": "html",
-        "message": "=<h2>CampusCast AI — Relatório Semanal</h2><p>Em anexo: {{ $('Get Weekly Report').first().json.filename }} com {{ $('Get Weekly Report').first().json.rows }} execuções da última semana.</p>",
+        "html": "=<h2 style='font-family:sans-serif;color:#1a73e8'>CampusCast AI — Relatório Semanal</h2><p style='font-family:sans-serif'>Últimas <b>{{ $('Get Weekly Report').first().json.rows }}</b> execuções da semana ({{ $now.toFormat('dd/MM/yyyy') }}):</p>{{ $('Get Weekly Report').first().json.html_summary }}<br><p style='font-family:sans-serif'>Arquivo Excel completo em anexo: <b>{{ $('Get Weekly Report').first().json.filename }}</b></p><p style='font-family:sans-serif'><a href='https://docs.google.com/spreadsheets/d/{{ $(\"Config\").first().json.sheetId }}'>Ver planilha completa no Google Sheets</a></p><hr><p style='font-family:sans-serif;font-size:11px;color:#888'>Este email foi enviado automaticamente pelo CampusCast AI — n8n</p>",
         "attachments": "data",
         "options": {}
       },

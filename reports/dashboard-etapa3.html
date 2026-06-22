@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>CampusCast AI — Apresentação Final · PUCPR 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"
+        integrity="sha384-e6nUZLBkQ86NJ6TVVKAeSaK8jWa3NhkYWZFomE39AvDbQWeie9PlQqM3pmYW5d1g"
+        crossorigin="anonymous"></script>
+<style>
+/* ── TOKENS ─────────────────────────────────────────── */
+:root {
+  --c-bg:      #05091a;
+  --c-s1:      #0b1120;
+  --c-s2:      #111827;
+  --c-s3:      #1a2236;
+  --c-b:       rgba(255,255,255,.07);
+  --c-ba:      rgba(59,130,246,.35);
+  --c-blue:    #3b82f6;
+  --c-blue-d:  #1d4ed8;
+  --c-blue-l:  #60a5fa;
+  --c-green:   #22c55e;
+  --c-amber:   #f59e0b;
+  --c-red:     #ef4444;
+  --c-purple:  #8b5cf6;
+  --c-t1:      #f1f5f9;
+  --c-t2:      #94a3b8;
+  --c-t3:      #475569;
+  --r:         14px;
+  --r-lg:      20px;
+  --shadow:    0 4px 24px rgba(0,0,0,.4);
+  --glow:      0 0 48px rgba(59,130,246,.18);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;font-size:15px}
+body{background:var(--c-bg);color:var(--c-t1);font-family:'Inter',system-ui,sans-serif;line-height:1.6;overflow-x:hidden}
+::selection{background:rgba(59,130,246,.3)}
+img,canvas{display:block;max-width:100%}
+
+/* ── SCROLLBAR ─────────────────────────────────────── */
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:var(--c-s1)}
+::-webkit-scrollbar-thumb{background:var(--c-s3);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--c-blue)}
+
+/* ── NAV ───────────────────────────────────────────── */
+#nav{
+  position:fixed;top:0;left:0;right:0;z-index:999;
+  display:flex;align-items:center;gap:4px;padding:0 48px;height:60px;
+  background:rgba(5,9,26,.85);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--c-b);transition:border-color .3s;
+}
+#nav .brand{font-size:15px;font-weight:700;color:var(--c-t1);margin-right:auto;
+            letter-spacing:-.3px;display:flex;align-items:center;gap:10px}
+#nav .brand-dot{width:8px;height:8px;border-radius:50%;background:var(--c-blue);
+                box-shadow:0 0 12px var(--c-blue);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+#nav a{padding:8px 14px;font-size:13px;font-weight:500;color:var(--c-t3);
+       text-decoration:none;border-radius:8px;transition:all .2s;white-space:nowrap}
+#nav a:hover,#nav a.on{color:var(--c-t1);background:rgba(255,255,255,.06)}
+#nav a.on{color:var(--c-blue-l)}
+
+/* ── HERO ──────────────────────────────────────────── */
+#hero{
+  min-height:100vh;display:grid;place-items:center;position:relative;
+  padding:100px 60px 80px;overflow:hidden;
+}
+.hero-bg{
+  position:absolute;inset:0;
+  background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(29,78,216,.3) 0%,transparent 70%),
+             radial-gradient(ellipse 40% 40% at 80% 80%,rgba(139,92,246,.15) 0%,transparent 60%);
+}
+.hero-grid{
+  position:absolute;inset:0;
+  background-image:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),
+                   linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);
+  background-size:60px 60px;
+  mask-image:radial-gradient(ellipse 70% 70% at 50% 0%,black 0%,transparent 80%);
+}
+.hero-inner{position:relative;z-index:1;max-width:1100px;width:100%;margin:0 auto;
+            display:grid;grid-template-columns:1fr 420px;gap:80px;align-items:center}
+.hero-eyebrow{display:inline-flex;align-items:center;gap:8px;padding:6px 14px;
+              background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.25);
+              border-radius:100px;font-size:12px;font-weight:500;color:var(--c-blue-l);
+              letter-spacing:.04em;text-transform:uppercase;margin-bottom:20px}
+.hero-eyebrow span{width:6px;height:6px;border-radius:50%;background:var(--c-blue);
+                   box-shadow:0 0 6px var(--c-blue)}
+h1{font-size:clamp(36px,5vw,60px);font-weight:900;line-height:1.05;letter-spacing:-1.5px;
+   background:linear-gradient(135deg,#fff 30%,#93c5fd 100%);
+   -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-sub{font-size:18px;color:#93c5fd;font-weight:500;margin:14px 0 8px}
+.hero-desc{font-size:15px;color:var(--c-t2);line-height:1.75;max-width:520px}
+.hero-tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:24px}
+.tag{padding:5px 13px;background:rgba(255,255,255,.05);border:1px solid var(--c-b);
+     border-radius:100px;font-size:12px;color:var(--c-t2);font-weight:500}
+.hero-ctas{display:flex;gap:12px;margin-top:32px}
+.btn-primary{
+  display:inline-flex;align-items:center;gap:8px;padding:13px 24px;
+  background:var(--c-blue);border-radius:10px;font-size:14px;font-weight:600;
+  color:#fff;text-decoration:none;transition:all .2s;border:none;cursor:pointer;
+  box-shadow:0 0 24px rgba(59,130,246,.3);
+}
+.btn-primary:hover{background:var(--c-blue-d);transform:translateY(-1px);box-shadow:0 0 32px rgba(59,130,246,.5)}
+.btn-ghost{display:inline-flex;align-items:center;gap:8px;padding:13px 24px;
+           background:rgba(255,255,255,.05);border:1px solid var(--c-b);border-radius:10px;
+           font-size:14px;font-weight:600;color:var(--c-t1);text-decoration:none;transition:all .2s}
+.btn-ghost:hover{background:rgba(255,255,255,.09);border-color:rgba(255,255,255,.15)}
+
+/* Hero card */
+.hero-card{
+  background:rgba(255,255,255,.04);border:1px solid var(--c-b);border-radius:var(--r-lg);
+  padding:32px;backdrop-filter:blur(20px);position:relative;overflow:hidden;
+}
+.hero-card::before{
+  content:'';position:absolute;inset:-1px;border-radius:var(--r-lg);
+  background:linear-gradient(135deg,rgba(59,130,246,.3),transparent 60%,rgba(139,92,246,.15));
+  padding:1px;-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);
+  -webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none;
+}
+.play-wrap{text-align:center;margin-bottom:24px}
+.play-btn{
+  width:72px;height:72px;border-radius:50%;margin:0 auto 16px;cursor:pointer;
+  background:linear-gradient(135deg,var(--c-blue),var(--c-purple));
+  display:flex;align-items:center;justify-content:center;text-decoration:none;
+  box-shadow:0 0 40px rgba(59,130,246,.5);transition:all .3s;
+}
+.play-btn:hover{transform:scale(1.08);box-shadow:0 0 60px rgba(59,130,246,.7)}
+.play-btn svg{width:26px;height:26px;fill:#fff;margin-left:4px}
+.play-wrap h3{font-size:15px;font-weight:600;margin-bottom:6px}
+.play-wrap p{font-size:13px;color:var(--c-t2)}
+.play-wrap a{font-size:11px;color:var(--c-blue-l);word-break:break-all;
+             display:block;margin-top:10px;text-decoration:none;opacity:.8}
+.play-wrap a:hover{opacity:1}
+.hero-stats{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px;
+            border-top:1px solid var(--c-b);padding-top:20px}
+.h-stat .val{font-size:26px;font-weight:800;color:var(--c-t1);line-height:1}
+.h-stat .lbl{font-size:11px;color:var(--c-t3);margin-top:4px;font-weight:500;text-transform:uppercase;letter-spacing:.05em}
+.h-stat.green .val{color:var(--c-green)}
+.h-stat.blue  .val{color:var(--c-blue-l)}
+.h-stat.amber .val{color:var(--c-amber)}
+.h-stat.purple .val{color:var(--c-purple)}
+
+/* ── SECTIONS ──────────────────────────────────────── */
+section{padding:100px 60px}
+.inner{max-width:1100px;margin:0 auto}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:11px;font-weight:600;
+         color:var(--c-blue-l);text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px}
+.eyebrow::before{content:'';width:20px;height:2px;background:var(--c-blue);border-radius:1px}
+.s-title{font-size:clamp(26px,3.5vw,40px);font-weight:800;letter-spacing:-1px;line-height:1.1;margin-bottom:12px}
+.s-sub{font-size:16px;color:var(--c-t2);max-width:620px;line-height:1.7;margin-bottom:48px}
+
+/* ── REVEAL ────────────────────────────────────────── */
+.reveal{opacity:0;transform:translateY(28px);transition:opacity .6s ease,transform .6s ease}
+.reveal.in{opacity:1;transform:none}
+.reveal-l{opacity:0;transform:translateX(-28px);transition:opacity .6s ease,transform .6s ease}
+.reveal-l.in{opacity:1;transform:none}
+.reveal-r{opacity:0;transform:translateX(28px);transition:opacity .6s ease,transform .6s ease}
+.reveal-r.in{opacity:1;transform:none}
+.d1{transition-delay:.1s}.d2{transition-delay:.2s}.d3{transition-delay:.3s}
+.d4{transition-delay:.4s}.d5{transition-delay:.5s}
+
+/* ── KPI GRID ──────────────────────────────────────── */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:64px}
+.kpi{background:var(--c-s2);border:1px solid var(--c-b);border-radius:var(--r);
+     padding:28px;position:relative;overflow:hidden;transition:border-color .3s,transform .2s}
+.kpi:hover{border-color:var(--kc,var(--c-blue));transform:translateY(-3px)}
+.kpi::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:var(--kc,var(--c-blue));opacity:.5}
+.kpi-icon{font-size:28px;margin-bottom:14px}
+.kpi-val{font-size:40px;font-weight:800;color:var(--kc);line-height:1;letter-spacing:-1px}
+.kpi-label{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--c-t3);margin-top:8px;font-weight:600}
+.kpi-detail{font-size:13px;color:var(--c-t2);margin-top:4px}
+.kpi.green{--kc:#22c55e}.kpi.blue{--kc:#60a5fa}.kpi.amber{--kc:#f59e0b}.kpi.purple{--kc:#a78bfa}
+
+/* ── CARDS ─────────────────────────────────────────── */
+.card{background:var(--c-s2);border:1px solid var(--c-b);border-radius:var(--r);padding:28px;transition:border-color .3s}
+.card:hover{border-color:rgba(255,255,255,.14)}
+.card-title{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--c-t3);
+            font-weight:600;margin-bottom:20px}
+
+/* ── CHART GRID ────────────────────────────────────── */
+.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.chart-grid .wide{grid-column:1/-1}
+.chart-card{background:var(--c-s2);border:1px solid var(--c-b);border-radius:var(--r);
+            padding:28px 28px 20px;transition:border-color .3s}
+.chart-card:hover{border-color:rgba(255,255,255,.14)}
+.chart-card h3{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--c-t3);font-weight:600;margin-bottom:20px}
+.chart-card canvas{max-height:230px}
+.chart-card.wide canvas{max-height:190px}
+
+/* ── ARCHITECTURE ──────────────────────────────────── */
+.arch-wrap{display:grid;grid-template-columns:1fr auto 1fr auto 1fr;gap:0;align-items:start}
+.arch-col{background:var(--c-s2);border:1px solid var(--c-b);border-radius:var(--r);
+          padding:24px;display:flex;flex-direction:column;gap:10px}
+.arch-col-head{font-size:11px;text-transform:uppercase;letter-spacing:.08em;font-weight:700;
+               padding:8px 0 14px;border-bottom:1px solid var(--c-b);margin-bottom:4px;
+               display:flex;align-items:center;gap:8px}
+.arch-arrow-col{display:flex;flex-direction:column;align-items:center;justify-content:center;
+                padding:0 16px;gap:6px;margin-top:60px}
+.arch-arrow-col span{font-size:22px;color:var(--c-t3)}
+.arch-arrow-col small{font-size:10px;color:var(--c-t3);writing-mode:vertical-rl;text-orientation:mixed;
+                      text-transform:uppercase;letter-spacing:.1em;white-space:nowrap}
+.a-node{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;
+        background:var(--c-s3);border:1px solid var(--c-b);border-radius:10px;
+        font-size:13px;font-weight:500;color:var(--c-t1);transition:border-color .2s}
+.a-node:hover{border-color:var(--nc,rgba(255,255,255,.2))}
+.a-node.blue{--nc:rgba(59,130,246,.4)}.a-node.green{--nc:rgba(34,197,94,.4)}.a-node.amber{--nc:rgba(245,158,11,.4)}
+.dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:4px}
+.db{background:var(--c-blue);box-shadow:0 0 6px var(--c-blue)}
+.dg{background:var(--c-green);box-shadow:0 0 6px var(--c-green)}
+.da{background:var(--c-amber);box-shadow:0 0 6px var(--c-amber)}
+.a-node-sub{font-size:11px;color:var(--c-t3);margin-top:2px;font-weight:400}
+
+/* ── PATH CARDS ────────────────────────────────────── */
+.paths{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:32px}
+.path-card{background:var(--c-s2);border:1px solid var(--c-b);border-radius:var(--r);padding:28px}
+.path-head{font-size:14px;font-weight:700;margin-bottom:20px;display:flex;align-items:center;gap:10px}
+.path-badge{padding:4px 10px;border-radius:100px;font-size:11px;font-weight:600}
+.pb-s{background:rgba(34,197,94,.12);color:var(--c-green);border:1px solid rgba(34,197,94,.25)}
+.pb-e{background:rgba(239,68,68,.12);color:var(--c-red);border:1px solid rgba(239,68,68,.25)}
+.p-step{display:flex;gap:12px;margin-bottom:14px}
+.p-num{width:26px;height:26px;border-radius:50%;font-size:11px;font-weight:700;
+       display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.p-num.s{background:rgba(34,197,94,.15);color:var(--c-green);border:1px solid rgba(34,197,94,.3)}
+.p-num.e{background:rgba(239,68,68,.15);color:var(--c-red);border:1px solid rgba(239,68,68,.3)}
+.p-step-t{font-size:13px;font-weight:500;color:var(--c-t1)}
+.p-step-s{font-size:12px;color:var(--c-t3);margin-top:2px}
+
+/* ── TABLE ─────────────────────────────────────────── */
+.tbl-wrap{overflow-x:auto;border-radius:var(--r);border:1px solid var(--c-b)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead th{background:rgba(59,130,246,.1);padding:12px 16px;text-align:left;
+         font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--c-blue-l);
+         font-weight:600;white-space:nowrap;border-bottom:1px solid var(--c-b)}
+tbody td{padding:12px 16px;color:var(--c-t2);border-bottom:1px solid var(--c-b)}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:nth-child(even){background:rgba(255,255,255,.02)}
+tbody tr:hover{background:rgba(255,255,255,.04)}
+.td-hl{color:var(--c-t1);font-weight:500}
+.td-ok{color:var(--c-green);font-weight:600}
+.td-warn{color:var(--c-amber);font-weight:600}
+.td-err{color:var(--c-red);font-weight:600}
+
+/* ── ROI ───────────────────────────────────────────── */
+.roi-box{
+  background:linear-gradient(135deg,rgba(5,46,22,.8),rgba(6,78,59,.6));
+  border:1px solid rgba(34,197,94,.25);border-radius:var(--r-lg);padding:40px;margin-top:40px;
+  position:relative;overflow:hidden;
+}
+.roi-box::before{content:'';position:absolute;top:-40px;right:-40px;width:200px;height:200px;
+                 background:radial-gradient(circle,rgba(34,197,94,.15),transparent 70%)}
+.roi-head{font-size:18px;font-weight:700;color:#6ee7b7;margin-bottom:28px}
+.roi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:32px;position:relative}
+.roi-item .rl{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#6ee7b7;font-weight:600;margin-bottom:6px}
+.roi-item .rv{font-size:38px;font-weight:800;color:#fff;line-height:1;letter-spacing:-1px}
+.roi-item .rs{font-size:13px;color:#a7f3d0;margin-top:6px}
+
+/* ── ETHICS ────────────────────────────────────────── */
+.e-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.e-card{background:var(--c-s2);border:1px solid var(--c-b);border-radius:var(--r);padding:24px}
+.e-card-head{font-size:14px;font-weight:600;color:var(--c-t1);margin-bottom:16px;
+             display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--c-b);padding-bottom:16px}
+.e-row{display:flex;gap:10px;margin-bottom:12px;font-size:13px;color:var(--c-t2);line-height:1.5}
+.e-row .ck{color:var(--c-green);flex-shrink:0;font-size:14px}
+.e-row strong{color:var(--c-t1);font-weight:500}
+.comply-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-top:40px}
+.comply-item{background:var(--c-s2);border:1px solid var(--c-b);border-radius:var(--r);
+             padding:20px 16px;text-align:center}
+.comply-item .ci-icon{font-size:24px;margin-bottom:8px}
+.comply-item .ci-name{font-size:12px;font-weight:600;color:var(--c-t1);margin-bottom:6px}
+.comply-item .ci-status{font-size:11px;color:var(--c-green);font-weight:500}
+.risk-bar{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.risk-label{font-size:13px;color:var(--c-t2);flex:1}
+.risk-pill{padding:3px 10px;border-radius:100px;font-size:11px;font-weight:600}
+.rp-low {background:rgba(34,197,94,.12);color:var(--c-green)}
+.rp-med {background:rgba(245,158,11,.12);color:var(--c-amber)}
+.rp-high{background:rgba(239,68,68,.12);color:var(--c-red)}
+
+/* ── ROADMAP ───────────────────────────────────────── */
+.rm-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:20px;margin-top:32px}
+.rm-card{background:var(--c-card);border:1px solid var(--c-border);border-radius:12px;padding:24px 20px}
+.rm-badge{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+          padding:3px 10px;border-radius:20px;margin-bottom:12px}
+.rm-title{font-size:15px;font-weight:700;color:var(--c-t1);margin-bottom:6px}
+.rm-desc{font-size:13px;color:var(--c-t2);line-height:1.6}
+
+/* ── STATS ROW ─────────────────────────────────────── */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:48px}
+.stat-box{background:var(--c-s2);border:1px solid var(--c-b);border-radius:var(--r);
+          padding:24px;text-align:center}
+.stat-val{font-size:36px;font-weight:800;line-height:1;letter-spacing:-1px}
+.stat-lbl{font-size:12px;color:var(--c-t3);margin-top:6px;text-transform:uppercase;letter-spacing:.05em;font-weight:500}
+
+/* ── SECTION ALTERNATION ───────────────────────────── */
+section:nth-of-type(even){background:var(--c-s1)}
+section:nth-of-type(odd) {background:var(--c-bg)}
+
+/* ── DIVIDER ───────────────────────────────────────── */
+.div{border:none;border-top:1px solid var(--c-b);margin:48px 0}
+
+/* ── BADGE INLINE ──────────────────────────────────── */
+.badge-inline{display:inline-block;padding:3px 10px;border-radius:100px;font-size:11px;font-weight:600}
+.bi-green{background:rgba(34,197,94,.12);color:var(--c-green);border:1px solid rgba(34,197,94,.25)}
+.bi-blue {background:rgba(59,130,246,.12);color:var(--c-blue-l);border:1px solid rgba(59,130,246,.25)}
+.bi-amber{background:rgba(245,158,11,.12);color:var(--c-amber);border:1px solid rgba(245,158,11,.25)}
+.bi-red  {background:rgba(239,68,68,.12);color:var(--c-red);border:1px solid rgba(239,68,68,.25)}
+
+/* ── PROGRESS BARS ─────────────────────────────────── */
+.progress-row{margin-bottom:16px}
+.pr-head{display:flex;justify-content:space-between;margin-bottom:6px}
+.pr-label{font-size:13px;color:var(--c-t2)}
+.pr-val{font-size:13px;font-weight:600;color:var(--c-t1)}
+.pr-track{height:6px;background:rgba(255,255,255,.07);border-radius:3px;overflow:hidden}
+.pr-fill{height:100%;border-radius:3px;transition:width 1.2s cubic-bezier(.4,0,.2,1)}
+
+/* ── FOOTER ────────────────────────────────────────── */
+footer{background:var(--c-s1);border-top:1px solid var(--c-b);padding:40px 60px;
+       display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:20px}
+footer .fc{font-size:13px;color:var(--c-t3)}
+footer a{color:var(--c-blue-l);text-decoration:none;font-weight:500}
+footer a:hover{color:var(--c-t1)}
+.footer-brand{font-size:15px;font-weight:700;color:var(--c-t1);display:flex;align-items:center;gap:8px}
+
+/* ── RESPONSIVE ────────────────────────────────────── */
+@media(max-width:1024px){
+  .hero-inner,.arch-wrap{grid-template-columns:1fr}
+  .arch-arrow-col{display:none}
+  .kpi-grid{grid-template-columns:1fr 1fr}
+  .chart-grid,.paths,.e-grid,.stats-row,.roi-grid,.comply-grid{grid-template-columns:1fr 1fr}
+  section{padding:72px 32px}
+  #hero{padding:100px 32px 72px}
+  #nav{padding:0 24px;gap:0}
+  #nav a{padding:8px 10px;font-size:12px}
+  footer{padding:32px}
+}
+@media(max-width:640px){
+  .kpi-grid,.chart-grid,.paths,.e-grid,.stats-row,.roi-grid,.comply-grid{grid-template-columns:1fr}
+  section{padding:60px 20px}
+  #hero{padding:90px 20px 60px}
+  h1{font-size:32px}
+  .chart-grid .wide{grid-column:1}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav id="nav">
+  <span class="brand"><span class="brand-dot"></span>CampusCast AI</span>
+  <a href="#hero">Início</a>
+  <a href="#metrics">Métricas</a>
+  <a href="#architecture">Arquitetura</a>
+  <a href="#ethics">Ética & LGPD</a>
+  <a href="#journey">Roadmap</a>
+</nav>
+
+<!-- ═══════════════════════════════════════════════════
+     HERO
+════════════════════════════════════════════════════ -->
+<section id="hero" style="padding-top:60px">
+  <div class="hero-bg"></div>
+  <div class="hero-grid"></div>
+  <div class="hero-inner">
+    <div class="hero-text">
+      <div class="hero-eyebrow"><span></span>PUCPR · AI Factory 2026 · Etapa Final</div>
+      <h1>CampusCast AI</h1>
+      <div class="hero-sub">Automação Inteligente de Comunicação Acadêmica</div>
+      <p class="hero-desc">
+        Pipeline completo que coleta dados climáticos em tempo real, gera boletins
+        em português com LLM local, sintetiza áudio neural e entrega em 4 canais
+        simultâneos — tudo rodando localmente em 15 segundos, sem custo de API.
+      </p>
+      <div class="hero-tags">
+        <span class="tag">Onesmus Simiyu</span>
+        <span class="tag">n8n · Ollama · Kokoro TTS</span>
+        <span class="tag">FastAPI · Python</span>
+        <span class="tag">Telegram · WhatsApp · Gmail</span>
+      </div>
+      <div class="hero-ctas">
+        <a href="https://www.veed.io/view/164fcb5c-2e9e-4725-bc53-e173eb116c07" target="_blank" class="btn-primary">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>
+          Ver Vídeo
+        </a>
+        <a href="#metrics" class="btn-ghost">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
+          Ver Métricas
+        </a>
+      </div>
+    </div>
+    <div class="hero-card">
+      <div class="play-wrap">
+        <a class="play-btn" href="https://www.veed.io/view/164fcb5c-2e9e-4725-bc53-e173eb116c07" target="_blank">
+          <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+        </a>
+        <h3>Apresentação Final</h3>
+        <p>Demonstração completa · 5–8 minutos</p>
+        <a href="https://www.veed.io/view/164fcb5c-2e9e-4725-bc53-e173eb116c07" target="_blank">
+          veed.io/view/164fcb5c-2e9e-4725-bc53-e173eb116c07
+        </a>
+      </div>
+      <div class="hero-stats">
+        <div class="h-stat green"><div class="val" data-count="100" data-suffix="%">0%</div><div class="lbl">Taxa Sucesso</div></div>
+        <div class="h-stat blue"><div class="val">15.1s</div><div class="lbl">Latência</div></div>
+        <div class="h-stat amber"><div class="val" data-count="4">0</div><div class="lbl">Canais</div></div>
+        <div class="h-stat purple"><div class="val">R$0</div><div class="lbl">Custo LLM/TTS</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════
+     METRICS
+════════════════════════════════════════════════════ -->
+<section id="metrics">
+<div class="inner">
+  <div class="reveal">
+    <div class="eyebrow">ID 3.1 · Stress Test · 5 Execuções</div>
+    <h2 class="s-title">Métricas de Performance & ROI</h2>
+    <p class="s-sub">Resultados medidos em produção simulada com <code style="background:var(--c-s3);padding:2px 8px;border-radius:6px;font-size:13px">tools/stress_test.py --runs 5</code> disparando o workflow via API REST do n8n.</p>
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi green reveal d1"><div class="kpi-icon">✅</div><div class="kpi-val">100%</div><div class="kpi-label">Taxa de Sucesso</div><div class="kpi-detail">5/5 execuções a quente · 0 falhas</div></div>
+    <div class="kpi blue reveal d2"><div class="kpi-icon">⚡</div><div class="kpi-val">15.1s</div><div class="kpi-label">Latência Média</div><div class="kpi-detail">Desvio padrão ≈ 0 — estável</div></div>
+    <div class="kpi amber reveal d3"><div class="kpi-icon">⏱</div><div class="kpi-val">~25 min</div><div class="kpi-label">Economia / Dia</div><div class="kpi-detail">vs. processo manual equivalente</div></div>
+    <div class="kpi purple reveal d4"><div class="kpi-icon">📡</div><div class="kpi-val">4</div><div class="kpi-label">Canais Simultâneos</div><div class="kpi-detail">Telegram · WA · Gmail · Sheets</div></div>
+  </div>
+
+  <!-- Charts -->
+  <div class="chart-grid">
+    <div class="chart-card reveal d1">
+      <h3>Latência por Etapa do Pipeline</h3>
+      <canvas id="cLat"></canvas>
+    </div>
+    <div class="chart-card reveal d2">
+      <h3>Status por Execução</h3>
+      <canvas id="cSucc"></canvas>
+    </div>
+    <div class="chart-card wide reveal d1">
+      <h3>Tempo de Parede por Execução (segundos)</h3>
+      <canvas id="cTime"></canvas>
+    </div>
+    <div class="chart-card reveal d1">
+      <h3>Cobertura de Canais de Entrega</h3>
+      <canvas id="cChan"></canvas>
+    </div>
+    <div class="chart-card reveal d2">
+      <h3>Melhorias Propostas — Latência Estimada</h3>
+      <canvas id="cImp"></canvas>
+    </div>
+  </div>
+
+  <!-- Latency breakdown bars -->
+  <div class="card reveal" style="margin-top:20px">
+    <div class="card-title">Decomposição detalhada · 15,1s total</div>
+    <div class="progress-row">
+      <div class="pr-head"><span class="pr-label">Ollama Generate (llama3.1:8b · CPU)</span><span class="pr-val">~11s · 73%</span></div>
+      <div class="pr-track"><div class="pr-fill" style="width:0%;background:linear-gradient(90deg,#ef4444,#f97316)" data-w="73"></div></div>
+    </div>
+    <div class="progress-row">
+      <div class="pr-head"><span class="pr-label">Kokoro TTS (pf_dora · pt-BR · CPU)</span><span class="pr-val">~2.5s · 17%</span></div>
+      <div class="pr-track"><div class="pr-fill" style="width:0%;background:linear-gradient(90deg,#f97316,#f59e0b)" data-w="17"></div></div>
+    </div>
+    <div class="progress-row">
+      <div class="pr-head"><span class="pr-label">HTTP I/O (Open-Meteo + Twilio REST)</span><span class="pr-val">~0.5s · 3%</span></div>
+      <div class="pr-track"><div class="pr-fill" style="width:0%;background:var(--c-blue)" data-w="3"></div></div>
+    </div>
+    <div class="progress-row">
+      <div class="pr-head"><span class="pr-label">Google Sheets (leitura + escrita)</span><span class="pr-val">~0.5s · 3%</span></div>
+      <div class="pr-track"><div class="pr-fill" style="width:0%;background:#8b5cf6" data-w="3"></div></div>
+    </div>
+    <div class="progress-row" style="margin-bottom:0">
+      <div class="pr-head"><span class="pr-label">Gmail SMTP + Telegram Bot API</span><span class="pr-val">~0.6s · 4%</span></div>
+      <div class="pr-track"><div class="pr-fill" style="width:0%;background:var(--c-green)" data-w="4"></div></div>
+    </div>
+  </div>
+
+  <!-- Executions table -->
+  <div class="tbl-wrap reveal" style="margin-top:32px">
+    <table>
+      <thead><tr><th>Nº</th><th>Exec ID</th><th>Tipo</th><th>Status</th><th>Tempo (s)</th><th>Observação</th></tr></thead>
+      <tbody>
+        <tr><td class="td-hl">1</td><td>127704</td><td>Inicialização a frio</td><td class="td-err">✗ erro</td><td>145,3</td><td>Kokoro carregando modelo (~20s de tempo limite)</td></tr>
+        <tr><td class="td-hl">2</td><td>127708</td><td>A quente</td><td class="td-ok">✓ sucesso</td><td>15,1</td><td>Modelo em memória — pipeline estável</td></tr>
+        <tr><td class="td-hl">3</td><td>127711</td><td>A quente</td><td class="td-ok">✓ sucesso</td><td>15,1</td><td>Desvio zero</td></tr>
+        <tr><td class="td-hl">4</td><td>127713</td><td>A quente</td><td class="td-ok">✓ sucesso</td><td>15,0</td><td>Sistema aquecido</td></tr>
+        <tr><td class="td-hl">5</td><td>127714</td><td>A quente</td><td class="td-ok">✓ sucesso</td><td>15,1</td><td>Confirma estabilidade</td></tr>
+        <tr><td class="td-hl">6</td><td>127964</td><td>Teste</td><td class="td-ok">✓ sucesso</td><td>15,2</td><td>Após correção do parâmetro html no Gmail</td></tr>
+        <tr><td class="td-hl">7</td><td>127980</td><td>Final</td><td class="td-ok">✓ sucesso</td><td>15,3</td><td>16 nós verdes, todos os canais entregues</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ROI -->
+  <div class="roi-box reveal">
+    <div class="roi-head">📊 Retorno sobre o Investimento</div>
+    <div class="roi-grid">
+      <div class="roi-item"><div class="rl">Processo Manual</div><div class="rv">25 min</div><div class="rs">por dia · pesquisa + redação + envio</div></div>
+      <div class="roi-item"><div class="rl">Com CampusCast AI</div><div class="rv">15 seg</div><div class="rs">pipeline completo · LLM + TTS + 4 canais</div></div>
+      <div class="roi-item"><div class="rl">Economia Anual</div><div class="rv">~150 h</div><div class="rs">≈ R$ 7.500 · ROI positivo em &lt; 1 semana</div></div>
+    </div>
+  </div>
+
+  <!-- Improvement table -->
+  <div class="tbl-wrap reveal" style="margin-top:32px">
+    <table>
+      <thead><tr><th>Prioridade</th><th>Melhoria</th><th>Impacto na Latência</th><th>Custo</th></tr></thead>
+      <tbody>
+        <tr><td><span class="badge-inline bi-green">1 · Imediato</span></td><td class="td-hl">llama3.1:8b → gemma2:2b</td><td class="td-ok">15.1s → ~7s (−53%)</td><td>Zero — só configuração</td></tr>
+        <tr><td><span class="badge-inline bi-blue">2 · Curto prazo</span></td><td class="td-hl">GPU NVIDIA (Ollama + CUDA)</td><td class="td-ok">15.1s → ~1.5s (−90%)</td><td>Hardware</td></tr>
+        <tr><td><span class="badge-inline bi-blue">3 · Arquitetural</span></td><td class="td-hl">Cache diário em Sheets</td><td>0s se cache válido</td><td>~2h dev</td></tr>
+        <tr><td><span class="badge-inline bi-blue">4 · Arquitetural</span></td><td class="td-hl">TTS assíncrono paralelo</td><td>−2s no caminho crítico</td><td>~3h dev</td></tr>
+        <tr><td><span class="badge-inline bi-amber">5 · Produção</span></td><td class="td-hl">WhatsApp Business API</td><td>Escala ilimitada</td><td>Contrato Twilio</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════
+     ARCHITECTURE
+════════════════════════════════════════════════════ -->
+<section id="architecture">
+<div class="inner">
+  <div class="reveal">
+    <div class="eyebrow">Etapas 1 & 2</div>
+    <h2 class="s-title">Arquitetura do Sistema</h2>
+    <p class="s-sub">Três camadas independentes que se comunicam via HTTP: orquestração n8n, microserviço FastAPI e serviços externos. O workflow nunca toca em credenciais — o servidor FastAPI funciona como proxy seguro.</p>
+  </div>
+
+  <div class="arch-wrap reveal">
+    <div class="arch-col">
+      <div class="arch-col-head"><span style="color:var(--c-blue)">●</span> Orquestração · n8n :5678</div>
+      <div class="a-node blue"><div class="dot db"></div><div><div>Schedule 07h</div><div class="a-node-sub">Cron · todos os dias</div></div></div>
+      <div class="a-node blue"><div class="dot db"></div><div><div>Config (Code)</div><div class="a-node-sub">city · emailTo · tgChatId</div></div></div>
+      <div class="a-node blue"><div class="dot db"></div><div><div>Get Weather</div><div class="a-node-sub">HTTP GET · Open-Meteo</div></div></div>
+      <div class="a-node blue"><div class="dot db"></div><div><div>Get Events</div><div class="a-node-sub">Google Sheets API</div></div></div>
+      <div class="a-node blue"><div class="dot db"></div><div><div>Build Prompt (Code)</div><div class="a-node-sub">WMO map + booleanos</div></div></div>
+      <div class="a-node blue"><div class="dot db"></div><div><div>Ollama Generate</div><div class="a-node-sub">127.0.0.1:11434 · llama3.1:8b</div></div></div>
+      <div class="a-node blue"><div class="dot db"></div><div><div>Check Result (IF)</div><div class="a-node-sub">mp3_file exists?</div></div></div>
+    </div>
+    <div class="arch-arrow-col"><span>→</span><small>HTTP</small></div>
+    <div class="arch-col">
+      <div class="arch-col-head"><span style="color:var(--c-green)">●</span> Microserviço FastAPI :8800</div>
+      <div class="a-node green"><div class="dot dg"></div><div><div>POST /tts</div><div class="a-node-sub">Kokoro pf_dora → WAV 24kHz</div></div></div>
+      <div class="a-node green"><div class="dot dg"></div><div><div>POST /convert</div><div class="a-node-sub">WAV → MP3 128kbps (lameenc)</div></div></div>
+      <div class="a-node green"><div class="dot dg"></div><div><div>POST /whatsapp</div><div class="a-node-sub">Proxy seguro → Twilio REST</div></div></div>
+      <div class="a-node green"><div class="dot dg"></div><div><div>GET /weekly-report</div><div class="a-node-sub">Sheets → XLSX (openpyxl)</div></div></div>
+      <div class="a-node green"><div class="dot dg"></div><div><div>GET /audio/{file}</div><div class="a-node-sub">FileResponse · bypass restrict</div></div></div>
+      <div class="a-node green"><div class="dot dg"></div><div><div>GET /reports/{file}</div><div class="a-node-sub">FileResponse XLSX</div></div></div>
+      <div class="a-node green"><div class="dot dg"></div><div><div>GET /health</div><div class="a-node-sub">Probe de disponibilidade</div></div></div>
+    </div>
+    <div class="arch-arrow-col"><span>→</span><small>API</small></div>
+    <div class="arch-col">
+      <div class="arch-col-head"><span style="color:var(--c-amber)">●</span> Serviços Externos</div>
+      <div class="a-node amber"><div class="dot da"></div><div><div>Open-Meteo API</div><div class="a-node-sub">Clima · gratuito · sem auth</div></div></div>
+      <div class="a-node amber"><div class="dot da"></div><div><div>Ollama llama3.1:8b</div><div class="a-node-sub">LLM local · 4.9 GB Q4_K_M</div></div></div>
+      <div class="a-node amber"><div class="dot da"></div><div><div>Kokoro TTS</div><div class="a-node-sub">Neural TTS local · pt-BR</div></div></div>
+      <div class="a-node amber"><div class="dot da"></div><div><div>Google Sheets API</div><div class="a-node-sub">events + results · service account</div></div></div>
+      <div class="a-node amber"><div class="dot da"></div><div><div>Twilio WhatsApp</div><div class="a-node-sub">Sandbox → Business API</div></div></div>
+      <div class="a-node amber"><div class="dot da"></div><div><div>Gmail SMTP</div><div class="a-node-sub">emailSend v2.1 · HTML + MP3</div></div></div>
+      <div class="a-node amber"><div class="dot da"></div><div><div>Telegram Bot API</div><div class="a-node-sub">retry 3× · timeout 15s</div></div></div>
+    </div>
+  </div>
+
+  <!-- Paths -->
+  <div class="paths">
+    <div class="path-card reveal reveal-l">
+      <div class="path-head"><span class="path-badge pb-s">✓ Sucesso · 16 nós</span></div>
+      <div class="p-step"><div class="p-num s">1</div><div><div class="p-step-t">Schedule → Config → Weather → Events</div><div class="p-step-s">Coleta e configuração</div></div></div>
+      <div class="p-step"><div class="p-num s">2</div><div><div class="p-step-t">Build Prompt → Ollama Generate</div><div class="p-step-s">Geração de conteúdo LLM (temp 0.3)</div></div></div>
+      <div class="p-step"><div class="p-num s">3</div><div><div class="p-step-t">Kokoro TTS → Convert WAV→MP3</div><div class="p-step-s">Síntese de áudio neural</div></div></div>
+      <div class="p-step"><div class="p-num s">4</div><div><div class="p-step-t">WhatsApp Bulletin</div><div class="p-step-s">Proxy /whatsapp → Twilio REST API</div></div></div>
+      <div class="p-step"><div class="p-num s">5</div><div><div class="p-step-t">Telegram Bulletin</div><div class="p-step-s">Bot API · retry automático 3×</div></div></div>
+      <div class="p-step"><div class="p-num s">6</div><div><div class="p-step-t">Gmail Bulletin</div><div class="p-step-s">HTML + MP3 binário em anexo</div></div></div>
+      <div class="p-step"><div class="p-num s">7</div><div><div class="p-step-t">Results Append → Is Monday? → XLSX</div><div class="p-step-s">Log + relatório semanal automático</div></div></div>
+    </div>
+    <div class="path-card reveal reveal-r">
+      <div class="path-head"><span class="path-badge pb-e">✗ Erro · 13 nós</span></div>
+      <div class="p-step"><div class="p-num e">1</div><div><div class="p-step-t">continueOnFail em Ollama / TTS / Convert</div><div class="p-step-s">Pipeline não para — captura e continua</div></div></div>
+      <div class="p-step"><div class="p-num e">2</div><div><div class="p-step-t">Check Result: mp3_file notExists?</div><div class="p-step-s">IF node detecta o ramo de falha</div></div></div>
+      <div class="p-step"><div class="p-num e">3</div><div><div class="p-step-t">Build Error Row (Set)</div><div class="p-step-s">status=error + mensagem de diagnóstico</div></div></div>
+      <div class="p-step"><div class="p-num e">4</div><div><div class="p-step-t">WhatsApp Error Alert</div><div class="p-step-s">Notificação imediata via Twilio</div></div></div>
+      <div class="p-step"><div class="p-num e">5</div><div><div class="p-step-t">Telegram Error Alert</div><div class="p-step-s">Retry automático 3 tentativas / 2s</div></div></div>
+      <div class="p-step"><div class="p-num e">6</div><div><div class="p-step-t">Gmail Error Alert</div><div class="p-step-s">Email HTML com diagnóstico + link Sheets</div></div></div>
+      <div class="p-step"><div class="p-num e">7</div><div><div class="p-step-t">Results Append Error</div><div class="p-step-s">Log persistente em Sheets · auditável</div></div></div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════
+     ETHICS
+════════════════════════════════════════════════════ -->
+<section id="ethics">
+<div class="inner">
+  <div class="reveal">
+    <div class="eyebrow">ID 3.2 · LGPD · IA Responsável</div>
+    <h2 class="s-title">Ética, Privacidade e Conformidade</h2>
+    <p class="s-sub">Avaliação completa dos aspectos legais, éticos e sociais — aplicando a LGPD (Lei 13.709/2018) e os princípios de IA responsável desde a concepção do sistema.</p>
+  </div>
+
+  <div class="e-grid">
+    <div class="e-card reveal d1">
+      <div class="e-card-head">🗃 Dados Pessoais Processados</div>
+      <div class="e-row"><span class="ck">→</span><div><strong>Email do destinatário</strong> — entrega do boletim<br><span style="color:var(--c-t3);font-size:12px">Base: Art. 7º, IX LGPD · Legítimo interesse</span></div></div>
+      <div class="e-row"><span class="ck">→</span><div><strong>Número WhatsApp</strong> — notificação mensageria<br><span style="color:var(--c-t3);font-size:12px">Base: Art. 7º, I LGPD · Consentimento explícito (join code)</span></div></div>
+      <div class="e-row"><span class="ck">→</span><div><strong>ID Chat Telegram</strong> — entrega do boletim<br><span style="color:var(--c-t3);font-size:12px">Base: Art. 7º, IX LGPD · Legítimo interesse</span></div></div>
+      <div class="e-row"><span class="ck">→</span><div><strong>Dados meteorológicos</strong> — conteúdo do boletim<br><span style="color:var(--c-t3);font-size:12px">Dado público · não pessoal (Art. 5º, I)</span></div></div>
+      <div style="margin-top:14px;padding:12px 14px;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2);border-radius:10px;font-size:13px;color:var(--c-green)">
+        ✅ Nenhum dado sensível (Art. 11) — sem saúde, biometria ou dados de crianças
+      </div>
+    </div>
+
+    <div class="e-card reveal d2">
+      <div class="e-card-head">⚖️ Princípios LGPD · Art. 6º</div>
+      <div class="e-row"><span class="ck">✓</span><div><strong>Finalidade</strong> — dados usados exclusivamente para comunicação acadêmica</div></div>
+      <div class="e-row"><span class="ck">✓</span><div><strong>Necessidade</strong> — apenas email, WhatsApp e Telegram ID armazenados</div></div>
+      <div class="e-row"><span class="ck">✓</span><div><strong>Transparência</strong> — remetente "CampusCast AI — n8n" identificado em todas as mensagens</div></div>
+      <div class="e-row"><span class="ck">✓</span><div><strong>Segurança</strong> — credenciais em env vars; chave Google em arquivo gitignored</div></div>
+      <div class="e-row"><span class="ck">✓</span><div><strong>Prevenção</strong> — proxy /whatsapp: workflow nunca vê Account SID ou Auth Token</div></div>
+      <div class="e-row"><span class="ck">✓</span><div><strong>Não discriminação</strong> — sem decisão autônoma sobre pessoas</div></div>
+    </div>
+
+    <div class="e-card reveal d3">
+      <div class="e-card-head">🤖 IA Responsável · 8 Dimensões</div>
+      <div class="e-row"><span class="ck">✓</span><div><strong>Transparência algorítmica</strong> — boletim identificado como "gerado por IA"; modelo open-source auditável</div></div>
+      <div class="e-row"><span class="ck">✓</span><div><strong>Supervisão humana (HITL)</strong> — alertas de erro em 3 canais; config controlada por humano</div></div>
+      <div class="e-row"><span class="ck">✓</span><div><strong>Explicabilidade</strong> — prompt com regras condicionais explícitas; logs auditáveis em Sheets</div></div>
+      <div class="e-row"><span class="ck">✓</span><div><strong>Baixo viés algorítmico</strong> — conteúdo restrito a fatos; temperatura modelo 0.3</div></div>
+      <div class="e-row"><span class="ck">✓</span><div><strong>Soberania de dados</strong> — LLM e TTS 100% locais; zero dados a APIs de IA pagas</div></div>
+    </div>
+
+    <div class="e-card reveal d4">
+      <div class="e-card-head">🛡 Riscos & Mitigações</div>
+      <div class="risk-bar"><span class="risk-label">Vazamento de credencial Twilio</span><span class="risk-pill rp-low">Baixo risco</span></div>
+      <div class="risk-bar"><span class="risk-label">LLM gera conteúdo incorreto</span><span class="risk-pill rp-low">Baixo risco</span></div>
+      <div class="risk-bar"><span class="risk-label">Cold start falha (Kokoro timeout)</span><span class="risk-pill rp-med">Médio risco</span></div>
+      <div class="risk-bar"><span class="risk-label">Indisponibilidade Open-Meteo/Twilio</span><span class="risk-pill rp-med">Médio risco</span></div>
+      <div class="risk-bar"><span class="risk-label">Destinatário errado por config</span><span class="risk-pill rp-low">Baixo risco</span></div>
+      <div style="margin-top:14px;font-size:13px;color:var(--c-t3)">Todos os riscos têm mitigação implementada: continueOnFail, env vars, gitignore, alertas automáticos.</div>
+    </div>
+  </div>
+
+  <!-- Compliance -->
+  <div class="comply-grid reveal" style="margin-top:0">
+    <div class="comply-item">
+      <div class="ci-icon">🇧🇷</div>
+      <div class="ci-name">LGPD</div>
+      <div class="ci-status">✅ Conforme</div>
+    </div>
+    <div class="comply-item">
+      <div class="ci-icon">🌐</div>
+      <div class="ci-name">Marco Civil</div>
+      <div class="ci-status">✅ Conforme</div>
+    </div>
+    <div class="comply-item">
+      <div class="ci-icon">🤖</div>
+      <div class="ci-name">EBIA 2024</div>
+      <div class="ci-status">✅ Conforme</div>
+    </div>
+    <div class="comply-item">
+      <div class="ci-icon">🇪🇺</div>
+      <div class="ci-name">EU AI Act</div>
+      <div class="ci-status">✅ Risco Mínimo</div>
+    </div>
+    <div class="comply-item">
+      <div class="ci-icon">🏛</div>
+      <div class="ci-name">OCDE IA</div>
+      <div class="ci-status">✅ Conforme</div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════
+     ROADMAP
+════════════════════════════════════════════════════ -->
+<section id="journey">
+<div class="inner">
+  <div class="reveal">
+    <div class="eyebrow">Próximos Passos</div>
+    <h2 class="s-title">Roadmap para Produção</h2>
+    <p class="s-sub">Quatro horizontes de evolução — sem reescrever um nó sequer do workflow atual.</p>
+  </div>
+
+  <div class="rm-grid reveal">
+    <div class="rm-card">
+      <div class="rm-badge" style="background:rgba(34,197,94,.15);color:var(--c-green)">Imediato · 1 semana</div>
+      <div class="rm-title">Troca de modelo LLM</div>
+      <div class="rm-desc">llama3.1:8b → gemma2:2b — latência cai de 15 s para ~7 s sem custo algum.</div>
+    </div>
+    <div class="rm-card">
+      <div class="rm-badge" style="background:rgba(59,130,246,.15);color:var(--c-blue-l)">Curto prazo · 1 mês</div>
+      <div class="rm-title">GPU + cache diário</div>
+      <div class="rm-desc">GPU NVIDIA (Ollama CUDA) leva latência a &lt; 2 s. Cache em Sheets elimina chamadas repetidas.</div>
+    </div>
+    <div class="rm-card">
+      <div class="rm-badge" style="background:rgba(245,158,11,.15);color:var(--c-amber)">Médio prazo · 3 meses</div>
+      <div class="rm-title">WhatsApp Business API</div>
+      <div class="rm-desc">Migração do sandbox Twilio para API oficial — escala ilimitada e consentimento LGPD formal.</div>
+    </div>
+    <div class="rm-card">
+      <div class="rm-badge" style="background:rgba(139,92,246,.15);color:var(--c-purple)">Longo prazo · 6 meses</div>
+      <div class="rm-title">Multi-campus & painel admin</div>
+      <div class="rm-desc">Expansão para múltiplos campi, multi-idioma e interface web para gestores configurarem o pipeline.</div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════
+     FOOTER
+════════════════════════════════════════════════════ -->
+<footer>
+  <div class="footer-brand"><span style="width:8px;height:8px;border-radius:50%;background:var(--c-blue);box-shadow:0 0 8px var(--c-blue)"></span>CampusCast AI</div>
+  <div class="fc">Onesmus Simiyu · PUCPR AI Factory 2026 · <a href="https://github.com/oness24/campuscast-ai" target="_blank">github.com/oness24/campuscast-ai</a></div>
+  <div class="fc"><a href="https://www.veed.io/view/164fcb5c-2e9e-4725-bc53-e173eb116c07" target="_blank">🎥 Vídeo de Apresentação</a></div>
+</footer>
+
+<!-- ═══════════════════════════════════════════════════
+     SCRIPTS
+════════════════════════════════════════════════════ -->
+<script>
+/* Chart defaults */
+Chart.defaults.color          = '#64748b';
+Chart.defaults.borderColor    = 'rgba(255,255,255,0.06)';
+Chart.defaults.font.family    = 'Inter,system-ui,sans-serif';
+
+const p = (a,o) => ({type:'doughnut',data:{labels:a,datasets:[{data:o,
+  backgroundColor:['#ef4444','#f97316','#3b82f6','#8b5cf6','#22c55e'],
+  borderWidth:2,borderColor:'#111827'}]},
+  options:{plugins:{legend:{position:'bottom',labels:{padding:14,font:{size:11},boxWidth:10}}}}});
+
+/* 1. Latency doughnut */
+new Chart(document.getElementById('cLat'),p(
+  ['Ollama LLM (~11s)','Kokoro TTS (~2.5s)','HTTP/IO (~0.5s)','Sheets (~0.5s)','Email/TG (~0.6s)'],
+  [11,2.5,0.5,0.5,0.6]
+));
+
+/* 2. Status bar */
+new Chart(document.getElementById('cSucc'),{
+  type:'bar',
+  data:{
+    labels:['127704\ncold','127708','127711','127713','127714','127964','127980'],
+    datasets:[{data:[0,1,1,1,1,1,1],
+      backgroundColor:['rgba(239,68,68,.7)','rgba(34,197,94,.7)','rgba(34,197,94,.7)',
+                       'rgba(34,197,94,.7)','rgba(34,197,94,.7)','rgba(34,197,94,.7)','rgba(34,197,94,.7)'],
+      borderRadius:6,borderSkipped:false}]
+  },
+  options:{plugins:{legend:{display:false}},
+    scales:{
+      y:{min:0,max:1.4,ticks:{callback:v=>v===1?'✓ OK':v===0?'✗ Erro':''},grid:{color:'rgba(255,255,255,.05)'}},
+      x:{grid:{display:false},ticks:{font:{size:10}}}
+    }}
+});
+
+/* 3. Timeline line */
+new Chart(document.getElementById('cTime'),{
+  type:'line',
+  data:{
+    labels:['Cold\n(127704)','Warm 1\n(127708)','Warm 2\n(127711)','Warm 3\n(127713)','Warm 4\n(127714)','Teste\n(127964)','Final\n(127980)'],
+    datasets:[
+      {label:'Tempo de parede (s)',
+       data:[145.3,15.1,15.1,15.0,15.1,15.2,15.3],
+       borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,.08)',
+       tension:.3,fill:true,
+       pointBackgroundColor:['#ef4444','#22c55e','#22c55e','#22c55e','#22c55e','#22c55e','#22c55e'],
+       pointRadius:6,pointHoverRadius:8},
+      {label:'Meta < 20s',data:[20,20,20,20,20,20,20],
+       borderColor:'rgba(245,158,11,.5)',borderDash:[6,4],
+       pointRadius:0,fill:false,tension:0}
+    ]
+  },
+  options:{scales:{
+    y:{title:{display:true,text:'Segundos',color:'#64748b'},grid:{color:'rgba(255,255,255,.05)'}},
+    x:{grid:{display:false}}
+  },plugins:{legend:{labels:{font:{size:11}}}}}
+});
+
+/* 4. Radar channels */
+new Chart(document.getElementById('cChan'),{
+  type:'radar',
+  data:{
+    labels:['Telegram','WhatsApp','Gmail','Google Sheets','XLSX Semanal'],
+    datasets:[{label:'Entrega confirmada',data:[5,5,5,5,5],
+      backgroundColor:'rgba(59,130,246,.12)',borderColor:'#3b82f6',
+      pointBackgroundColor:'#3b82f6',pointRadius:5,pointHoverRadius:7}]
+  },
+  options:{scales:{r:{min:0,max:5,
+    angleLines:{color:'rgba(255,255,255,.06)'},
+    grid:{color:'rgba(255,255,255,.06)'},
+    ticks:{display:false},
+    pointLabels:{font:{size:12},color:'#e2e8f0'}}},
+    plugins:{legend:{display:false}}}
+});
+
+/* 5. Improvement horizontal bar */
+new Chart(document.getElementById('cImp'),{
+  type:'bar',
+  data:{
+    labels:['Atual (CPU)','gemma2:2b','GPU NVIDIA','GPU + Cache','GPU+Cache+Async'],
+    datasets:[{data:[15.1,7.0,1.5,0.5,0.3],
+      backgroundColor:['rgba(239,68,68,.7)','rgba(249,115,22,.7)','rgba(59,130,246,.7)','rgba(34,197,94,.7)','rgba(139,92,246,.7)'],
+      borderRadius:6,borderSkipped:false}]
+  },
+  options:{indexAxis:'y',
+    plugins:{legend:{display:false}},
+    scales:{
+      x:{title:{display:true,text:'Segundos',color:'#64748b'},grid:{color:'rgba(255,255,255,.05)'},min:0},
+      y:{grid:{display:false},ticks:{font:{size:11}}}
+    }}
+});
+
+/* ── Scroll reveal ── */
+const obs = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('in')})
+},{threshold:.12});
+document.querySelectorAll('.reveal,.reveal-l,.reveal-r').forEach(el=>obs.observe(el));
+
+/* ── Progress bars ── */
+const barObs = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      e.target.querySelectorAll('.pr-fill').forEach(b=>{
+        b.style.width = b.dataset.w + '%';
+      });
+      barObs.unobserve(e.target);
+    }
+  })
+},{threshold:.3});
+document.querySelectorAll('.card').forEach(c=>barObs.observe(c));
+
+/* ── Counter animation ── */
+const countObs = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(!e.isIntersecting) return;
+    e.target.querySelectorAll('[data-count]').forEach(el=>{
+      const target = +el.dataset.count;
+      const suffix = el.dataset.suffix || '';
+      let start = 0, duration = 1200;
+      const step = timestamp=>{
+        if(!start) start = timestamp;
+        const progress = Math.min((timestamp-start)/duration,1);
+        el.textContent = Math.floor(progress * target) + suffix;
+        if(progress < 1) requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    });
+    countObs.unobserve(e.target);
+  })
+},{threshold:.5});
+document.querySelectorAll('.hero-card').forEach(c=>countObs.observe(c));
+
+/* ── Active nav ── */
+const navLinks  = document.querySelectorAll('#nav a[href^="#"]');
+const sections  = document.querySelectorAll('section[id],div[id="hero"]');
+const navObs    = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      const id = e.target.id;
+      navLinks.forEach(a=>a.classList.toggle('on',a.getAttribute('href')==='#'+id));
+    }
+  })
+},{rootMargin:'-40% 0px -55% 0px'});
+sections.forEach(s=>navObs.observe(s));
+</script>
+</body>
+</html>

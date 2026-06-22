@@ -204,10 +204,29 @@ def weekly_report() -> dict:
     xlsx_path = reports_dir / filename
     wb.save(str(xlsx_path))
 
+    # Build a compact HTML table for the weekly email body
+    display_cols = ["timestamp", "city", "temperature", "humidity", "rain", "wind_speed", "status"]
+    col_indices = [headers.index(c) for c in display_cols if c in headers]
+    used_headers = [headers[i] for i in col_indices]
+
+    th = "".join(f"<th style='padding:6px 10px;background:#1a73e8;color:#fff;text-align:left'>{h}</th>" for h in used_headers)
+    rows_html = ""
+    for idx, row in enumerate(last_seven):
+        padded = row + [""] * max(0, max(col_indices, default=0) + 1 - len(row))
+        cells = "".join(f"<td style='padding:5px 10px;border-bottom:1px solid #e0e0e0'>{padded[i]}</td>" for i in col_indices)
+        bg = "#f8f9fa" if idx % 2 == 0 else "#ffffff"
+        rows_html += f"<tr style='background:{bg}'>{cells}</tr>"
+
+    html_summary = (
+        f"<table style='border-collapse:collapse;font-family:sans-serif;font-size:13px'>"
+        f"<thead><tr>{th}</tr></thead><tbody>{rows_html}</tbody></table>"
+    )
+
     return {
         "xlsx_file": str(xlsx_path.relative_to(PROJECT_ROOT)),
         "filename": filename,
         "rows": len(last_seven),
+        "html_summary": html_summary,
     }
 
 

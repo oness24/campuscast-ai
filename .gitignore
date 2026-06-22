@@ -24,4 +24,5 @@ credentials/*.json
 
 # The huge cloned n8n source tree (safety net in case it isn't removed yet)
 n8n/
-reports/
+reports/*.xlsx
+reports/*.xls
